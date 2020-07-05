@@ -90,7 +90,7 @@ logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s', level=lo
 sqs = boto3.resource('sqs')
 
 QUEUE_POLLING_WAIT_TIME = 10 # 20 sec is maximum 
-QUEUE_REPOLLING_SLEEP_TIME = 30 
+QUEUE_REPOLLING_SLEEP_TIME = 0 
 VISIBILITY_TIMEOUT = 120 # 2 mins
 BATCH_SIZE = 10 # number of messages to read/process in each batch, maximum 10
 
