@@ -92,7 +92,7 @@ sqs = boto3.resource('sqs')
 QUEUE_POLLING_WAIT_TIME = 10 # 20 sec is maximum 
 QUEUE_REPOLLING_SLEEP_TIME = 30 
 VISIBILITY_TIMEOUT = 120 # 2 mins
-BATCH_SIZE = 5 # number of messages to read/process in each batch
+BATCH_SIZE = 10 # number of messages to read/process in each batch, maximum 10
 
 # get the input and output queues
 input_queue = sqs.get_queue_by_name(QueueName='grid_tasks_queue')
@@ -140,7 +140,7 @@ while True:
       body = messages[i].body
       handle = messages[i].receipt_handle
 
-      logging.info(f'Processing request message {i+1} of {n} with id [{id}]')
+      logging.debug(f'Processing request message {i+1} of {n} with id [{id}]')
 
       (response_json, et) = handleRequest(body)
       cet += et
@@ -169,7 +169,7 @@ while True:
       csmt += smt
 
       if send_ack:   
-        logging.info(f'Sent {n} response messages to output queue, executed in {smt}s')
+        logging.info(f'Processed and sent {n} response messages to output queue, executed in {smt}s')
 
     except Exception as e:
       logging.error('Error sending response message', exc_info=e)
