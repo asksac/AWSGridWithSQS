@@ -6,7 +6,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from producer.primeNumbers import *
 from worker.factorizeInteger import * 
 
-bits = 10 # default 
+bits = 45 # default 
 
 if len(sys.argv) > 1:
   bits = int(sys.argv[1])
