@@ -1,7 +1,7 @@
 {
   "agent": {
-    "metrics_collection_interval": 10,  // metrics collection interval in seconds
-    "logfile": "/var/log/amazon-cloudwatch-agent.log",  // cloudWatch agent writes its logs here
+    "metrics_collection_interval": 10, 
+    "logfile": "/var/log/amazon-cloudwatch-agent.log", 
     "debug": false  
   },
   "logs": {
@@ -23,16 +23,16 @@
     }
   },
   "metrics": {
-    "append_dimensions": {  // Dimensions to add to all metrics
+    "append_dimensions": { 
       "AutoScalingGroupName": "${aws:AutoScalingGroupName}",
       "InstanceId": "${aws:InstanceId}"
     },
-    "aggregation_dimensions": [["AutoScalingGroupName"]],  // Dimensions on which metrics are to be aggregated
+    "aggregation_dimensions": [["AutoScalingGroupName"]], 
     "metrics_collected": {
-      "collectd": {  // Collect metrics through collectd; you must install collectd for this to work
+      "collectd": { 
         "metrics_aggregation_interval": 60
       },
-      "statsd": {  // CloudAgent will act as a statsd server to allow collection of additional metrics
+      "statsd": { 
         "metrics_aggregation_interval": 60,
         "metrics_collection_interval": 10,
         "service_address": ":8125"
@@ -44,7 +44,7 @@
           "cpu_usage_user",
           "cpu_usage_system"
         ],
-        "totalcpu": true  // Set to `false` to show each CPU, `true` to aggregate all CPUs
+        "totalcpu": true 
       },
       "disk": {
         "measurement": [
