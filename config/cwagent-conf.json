@@ -1,0 +1,88 @@
+{
+  "agent": {
+    "metrics_collection_interval": 10,  // metrics collection interval in seconds
+    "logfile": "/var/log/amazon-cloudwatch-agent.log",  // cloudWatch agent writes its logs here
+    "debug": false  
+  },
+  "logs": {
+    "logs_collected": {
+      "files": {
+        "collect_list": [
+          {
+            "file_path": "/var/log/worker-main.log",  
+            "log_group_name": "AWSGridWithSQS-Logs",  
+            "log_stream_name": "Workers/{instance_id}/worker-main.log" 
+          },
+          {
+            "file_path": "/var/log/producer-main.log",
+            "log_group_name": "AWSGridWithSQS-Logs",
+            "log_stream_name": "Producers/{instance_id}/producer-main.log"
+          }
+        ]
+      }
+    }
+  },
+  "metrics": {
+    "append_dimensions": {  // Dimensions to add to all metrics
+      "AutoScalingGroupName": "${aws:AutoScalingGroupName}",
+      "InstanceId": "${aws:InstanceId}"
+    },
+    "aggregation_dimensions": [["AutoScalingGroupName"]],  // Dimensions on which metrics are to be aggregated
+    "metrics_collected": {
+      "collectd": {  // Collect metrics through collectd; you must install collectd for this to work
+        "metrics_aggregation_interval": 60
+      },
+      "statsd": {  // CloudAgent will act as a statsd server to allow collection of additional metrics
+        "metrics_aggregation_interval": 60,
+        "metrics_collection_interval": 10,
+        "service_address": ":8125"
+      },
+      "cpu": {
+        "measurement": [
+          "cpu_usage_idle",
+          "cpu_usage_iowait",
+          "cpu_usage_user",
+          "cpu_usage_system"
+        ],
+        "totalcpu": true  // Set to `false` to show each CPU, `true` to aggregate all CPUs
+      },
+      "disk": {
+        "measurement": [
+          "used_percent",
+          "inodes_free"
+        ],
+        "resources": [
+          "*"
+        ]
+      },
+      "diskio": {
+        "measurement": [
+          "io_time",
+          "write_bytes",
+          "read_bytes",
+          "writes",
+          "reads"
+        ],
+        "resources": [
+          "*"
+        ]
+      },
+      "mem": {
+        "measurement": [
+          "mem_used_percent"
+        ]
+      },
+      "netstat": {
+        "measurement": [
+          "tcp_established",
+          "tcp_time_wait"
+        ]
+      },
+      "swap": {
+        "measurement": [
+          "swap_used_percent"
+        ]
+      }
+    }
+  }
+}
