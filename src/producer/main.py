@@ -11,7 +11,7 @@ sqs = boto3.resource('sqs')
 
 VISIBILITY_TIMEOUT = 120 # 2 mins
 
-MESSAGES_PER_SECOND = 10
+MESSAGES_PER_SECOND = 170
 
 # get the tasks queue
 tasks_queue = sqs.get_queue_by_name(QueueName='grid_tasks_queue')
@@ -47,20 +47,22 @@ while True:
         smt = sm_et - sm_st 
         csmt += smt
         if ack: 
-          logging.info(f'Sent a batch of {len(queue_entries)} task messages, produced in {dt}s and sent with {smt}s latency')
+          logging.debug(f'Sent a batch of {len(queue_entries)} task messages with {smt}s send message latency')
         queue_entries = []
       except Error as e:
         logging.error('Error sending task messages', exc_info=e)
 
-    if dt >= 1.0: 
-      # it is >= 1 second
-      logging.error(f'Produced {i} of {MESSAGES_PER_SECOND} messages before exceeding 1s iteration time')
+    dt = time.time() - st
+
+    if (i >= MESSAGES_PER_SECOND) or (dt >= 1.0): 
+      # end of inner while loop
+      logging.info(f'Delivered {i} of {MESSAGES_PER_SECOND} messages in {dt}s, and {csmt}s total send message time')
       break
     else: 
       i += 1
 
-  if (dt + csmt) <= 1.0: 
-    time.sleep(1.0 - (dt + csmt))
+  if dt <= 1.0: 
+    time.sleep(1.0 - dt)
     
 
   
