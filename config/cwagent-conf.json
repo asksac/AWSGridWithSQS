@@ -11,12 +11,12 @@
           {
             "file_path": "/var/log/worker-main.log",  
             "log_group_name": "AWSGridWithSQS-Logs",  
-            "log_stream_name": "Workers/{instance_id}/worker-main.log" 
+            "log_stream_name": "Workers_{instance_id}_worker-main.log" 
           },
           {
             "file_path": "/var/log/producer-main.log",
             "log_group_name": "AWSGridWithSQS-Logs",
-            "log_stream_name": "Producers/{instance_id}/producer-main.log"
+            "log_stream_name": "Producers_{instance_id}_producer-main.log"
           }
         ]
       }
