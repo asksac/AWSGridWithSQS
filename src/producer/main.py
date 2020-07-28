@@ -1,6 +1,7 @@
 import logging, time, json, random
 import boto3
 from primeNumbers import generateLargePrime
+from statsd import StatsClient
 
 def main():
   # Get the service resource
@@ -10,6 +11,7 @@ def main():
   tasks_queue = sqs.get_queue_by_name(QueueName='grid_tasks_queue')
 
   while True: 
+    statsdpipe = statsd.pipeline()
     st = time.time()
     dt = 0
     i = 1
@@ -50,6 +52,11 @@ def main():
       if (i >= MESSAGES_PER_SECOND) or (dt >= 1.0): 
         # end of inner while loop
         logging.info(f'Delivered {i} of {MESSAGES_PER_SECOND} messages in {dt}s, and {csmt}s total send message time')
+        statsdpipe.gauge(STATS_PREFIX + '.producer.tps', i)
+        statsdpipe.gauge(STATS_PREFIX + '.producer.mps', MESSAGES_PER_SECOND)
+        statsdpipe.gauge(STATS_PREFIX + '.producer.dt', dt)
+        statsdpipe.gauge(STATS_PREFIX + '.producer.csmt', csmt)
+        statsdpipe.send()
         break
       else: 
         i += 1
@@ -63,6 +70,9 @@ logging.basicConfig(filename=LOG_FILENAME, format='%(asctime)s - %(levelname)s -
 
 VISIBILITY_TIMEOUT = 120 # 2 mins
 MESSAGES_PER_SECOND = 600
+STATS_PREFIX = 'awsgridwithsqs'
+
+statsd = StatsClient()
 
 main()      
 
