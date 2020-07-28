@@ -1,20 +1,19 @@
 {
   "agent": {
     "metrics_collection_interval": 10, 
-    "logfile": "/var/log/amazon-cloudwatch-agent.log", 
-    "debug": false  
+    "logfile": "/var/log/amazon-cloudwatch-agent.log" 
   },
   "logs": {
     "logs_collected": {
       "files": {
         "collect_list": [
           {
-            "file_path": "/var/log/worker-main.log",  
+            "file_path": "/var/log/AWSGridWithSQS/worker-main.log",  
             "log_group_name": "AWSGridWithSQS-Logs",  
             "log_stream_name": "Workers_{instance_id}_worker-main.log" 
           },
           {
-            "file_path": "/var/log/producer-main.log",
+            "file_path": "/var/log/AWSGridWithSQS/producer-main.log",
             "log_group_name": "AWSGridWithSQS-Logs",
             "log_stream_name": "Producers_{instance_id}_producer-main.log"
           }
@@ -29,11 +28,8 @@
     },
     "aggregation_dimensions": [["AutoScalingGroupName"]], 
     "metrics_collected": {
-      "collectd": { 
-        "metrics_aggregation_interval": 60
-      },
       "statsd": { 
-        "metrics_aggregation_interval": 60,
+        "metrics_aggregation_interval": 30,
         "metrics_collection_interval": 10,
         "service_address": ":8125"
       },
