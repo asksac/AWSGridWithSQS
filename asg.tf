@@ -19,7 +19,7 @@ resource "aws_security_group" "allow_ssh_sg" {
 resource "aws_launch_configuration" "worker_launch_config" {
   name_prefix                 = "awsgrid-worker-lc-"
   image_id                    = var.ec2_ami_id
-  instance_type               = "t2.micro"
+  instance_type               = "c5.large"
   iam_instance_profile        = aws_iam_instance_profile.ec2_instance_profile.name
   security_groups             = [aws_security_group.allow_ssh_sg.id]
   key_name                    = var.ec2_ssh_keypair_name
@@ -38,6 +38,8 @@ resource "aws_autoscaling_group" "worker_asg" {
   health_check_type     = "EC2"
   vpc_zone_identifier   = [aws_subnet.ec2_instance_subnet.id]
   launch_configuration  = aws_launch_configuration.worker_launch_config.name
+  metrics_granularity   = "1Minute"
+  enabled_metrics       = ['GroupDesiredCapacity', 'GroupInServiceInstances']
 
   lifecycle {
     create_before_destroy = true
@@ -52,7 +54,7 @@ resource "aws_autoscaling_group" "worker_asg" {
 resource "aws_launch_configuration" "producer_launch_config" {
   name_prefix                 = "awsgrid-producer-lc-"
   image_id                    = var.ec2_ami_id
-  instance_type               = "t2.micro"
+  instance_type               = "c5.large"
   iam_instance_profile        = aws_iam_instance_profile.ec2_instance_profile.name
   security_groups             = [aws_security_group.allow_ssh_sg.id]
   key_name                    = var.ec2_ssh_keypair_name
@@ -67,10 +69,10 @@ resource "aws_autoscaling_group" "producer_asg" {
   name                  = "awsgrid-with-sqs-producer-asg"
   min_size              = 1
   max_size              = 5
-  desired_capacity      = 2
+  desired_capacity      = 1
   health_check_type     = "EC2"
   vpc_zone_identifier   = [aws_subnet.ec2_instance_subnet.id]
-  launch_configuration  = aws_launch_configuration.producerlaunch_config.name
+  launch_configuration  = aws_launch_configuration.producer_launch_config.name
 
   lifecycle {
     create_before_destroy = true
