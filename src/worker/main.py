@@ -84,6 +84,7 @@ def main():
       # read message(s) from the input queue
       rm_st = time.time()
       messages = input_queue.receive_messages(
+        AttributeNames=['ApproximateNumberOfMessages'],
         MaxNumberOfMessages=BATCH_SIZE, 
         WaitTimeSeconds=QUEUE_POLLING_WAIT_TIME, 
         VisibilityTimeout=VISIBILITY_TIMEOUT
@@ -98,11 +99,13 @@ def main():
       response_entries = []
       deletion_entries = []
       n = len(messages)
-      statsdpipe.incr(STATS_PREFIX + '.worker.tasks', n)
+      # rate = 1/10 since metrics_collection_interval = 10 seconds
+      statsdpipe.incr(STATS_PREFIX + '.worker.tasks', n, rate=0.1) 
       for i in range(n): 
         id = messages[i].message_id
         body = messages[i].body
         handle = messages[i].receipt_handle
+        #anom = messages[i].attributes['ApproximateNumberOfMessages']
 
         logging.debug(f'Processing request message {i+1} of {n} with id [{id}]')
 
