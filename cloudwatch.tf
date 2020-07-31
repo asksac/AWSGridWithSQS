@@ -122,7 +122,8 @@ resource "aws_cloudwatch_dashboard" "main" {
             "height": 6,
             "properties": {
                 "metrics": [
-                    [ "AWSGridWithSQS/AppMetrics", "awsgridwithsqs_worker_tps", "AutoScalingGroupName", "awsgrid-with-sqs-worker-asg" ]
+                    [ { "expression": "ANOMALY_DETECTION_BAND(m1, 2)", "label": "Anomaly Detection Band", "id": "e1" } ],
+                    [ "AWSGridWithSQS/AppMetrics", "awsgridwithsqs_worker_tps", "AutoScalingGroupName", "awsgrid-with-sqs-worker-asg", { "label": "Worker TPS [Avg: ${AVG}]", "id": "m1" } ]
                 ],
                 "view": "timeSeries",
                 "stacked": false,
@@ -140,7 +141,8 @@ resource "aws_cloudwatch_dashboard" "main" {
             "height": 6,
             "properties": {
                 "metrics": [
-                    [ "AWSGridWithSQS/AppMetrics", "awsgridwithsqs_producer_tps", "AutoScalingGroupName", "awsgrid-with-sqs-producer-asg" ]
+                    [ { "expression": "ANOMALY_DETECTION_BAND(m1, 2)", "label": "Anomaly Detection Band", "id": "e1" } ],
+                    [ "AWSGridWithSQS/AppMetrics", "awsgridwithsqs_producer_tps", "AutoScalingGroupName", "awsgrid-with-sqs-producer-asg", { "label": "Producer TPS [Avg: ${AVG}]", "id": "m1" } ]
                 ],
                 "view": "timeSeries",
                 "stacked": false,
@@ -188,7 +190,7 @@ resource "aws_cloudwatch_dashboard" "main" {
         },
         {
             "type": "metric",
-            "x": 6,
+            "x": 18,
             "y": 6,
             "width": 6,
             "height": 3,
@@ -241,7 +243,7 @@ resource "aws_cloudwatch_dashboard" "main" {
         },
         {
             "type": "metric",
-            "x": 0,
+            "x": 6,
             "y": 6,
             "width": 6,
             "height": 3,
@@ -254,6 +256,80 @@ resource "aws_cloudwatch_dashboard" "main" {
                 "title": "Producer In Service Instances",
                 "period": 60,
                 "stat": "Average"
+            }
+        },
+        {
+            "type": "metric",
+            "x": 12,
+            "y": 6,
+            "width": 6,
+            "height": 3,
+            "properties": {
+                "view": "timeSeries",
+                "stacked": false,
+                "metrics": [
+                    [ "AWS/AutoScaling", "GroupDesiredCapacity", "AutoScalingGroupName", "awsgrid-with-sqs-worker-asg" ],
+                    [ ".", "GroupInServiceInstances", ".", "." ]
+                ],
+                "region": "us-east-1",
+                "title": "Worker ASG Capacity",
+                "period": 300
+            }
+        },
+        {
+            "type": "metric",
+            "x": 0,
+            "y": 6,
+            "width": 6,
+            "height": 3,
+            "properties": {
+                "view": "timeSeries",
+                "stacked": false,
+                "metrics": [
+                    [ "AWS/AutoScaling", "GroupInServiceInstances", "AutoScalingGroupName", "awsgrid-with-sqs-producer-asg" ],
+                    [ ".", "GroupDesiredCapacity", ".", "." ]
+                ],
+                "region": "us-east-1",
+                "title": "Producer ASG Capacity"
+            }
+        },
+        {
+            "type": "metric",
+            "x": 12,
+            "y": 9,
+            "width": 6,
+            "height": 6,
+            "properties": {
+                "metrics": [
+                    [ "AWSGridWithSQS/AppMetrics", "awsgridwithsqs_producer_csmt", "AutoScalingGroupName", "awsgrid-with-sqs-producer-asg", { "label": "Batch Send Message Time" } ]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "us-east-1",
+                "title": "Producer Nodes Performance",
+                "stat": "Average",
+                "period": 60
+            }
+        },
+        {
+            "type": "metric",
+            "x": 18,
+            "y": 9,
+            "width": 6,
+            "height": 6,
+            "properties": {
+                "metrics": [
+                    [ "AWSGridWithSQS/AppMetrics", "awsgridwithsqs_worker_crmt", "AutoScalingGroupName", "awsgrid-with-sqs-worker-asg", { "label": "Batch Read Message Time" } ],
+                    [ ".", "awsgridwithsqs_worker_csmt", ".", ".", { "label": "Batch Send Message Time" } ],
+                    [ ".", "awsgridwithsqs_worker_cdmt", ".", ".", { "label": "Batch Delete Message Time" } ],
+                    [ ".", "awsgridwithsqs_worker_cet", ".", ".", { "label": "Batch Execution Time" } ]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "us-east-1",
+                "title": "Worker Nodes Performance",
+                "stat": "Average",
+                "period": 60
             }
         }
     ]
