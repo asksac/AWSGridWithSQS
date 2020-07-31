@@ -4,7 +4,7 @@ resource "aws_sqs_queue" "grid_tasks_queue" {
   delay_seconds               = 0
   max_message_size            = 2048 # 2kbs
   visibility_timeout_seconds  = 120 # 2 mins
-  message_retention_seconds   = 86400 # 1 day
+  message_retention_seconds   = 3600 # 1 hr
   receive_wait_time_seconds   = 10
   redrive_policy              = jsonencode({
     deadLetterTargetArn       = aws_sqs_queue.grid_tasks_dlq.arn
@@ -29,7 +29,7 @@ resource "aws_sqs_queue" "grid_results_queue" {
   delay_seconds               = 0
   max_message_size            = 2048 # 2kbs
   visibility_timeout_seconds  = 30 
-  message_retention_seconds   = 86400 # 1 day
+  message_retention_seconds   = 1800 # 30 mins
   receive_wait_time_seconds   = 10
   redrive_policy              = jsonencode({
     deadLetterTargetArn       = aws_sqs_queue.grid_results_dlq.arn
