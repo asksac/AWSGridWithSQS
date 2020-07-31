@@ -17,11 +17,14 @@ def main():
     i = 1
     queue_entries = []
     csmt = 0
+    cet = 0
 
     while i <= MESSAGES_PER_SECOND: 
+      est = time.time()
       #bits = random.randint(15, 25) 
-      bits = random.randint(25, 35) 
+      bits = random.randint(25, 40) 
       number = generateLargePrime(bits)
+      cet += time.time() - est
 
       req_obj = dict(input = number, type = 'Decimal')
       req_json = json.dumps(req_obj)
@@ -54,7 +57,7 @@ def main():
         logging.info(f'Delivered {i} of {MESSAGES_PER_SECOND} messages in {dt}s, and {csmt}s total send message time')
         statsdpipe.gauge(STATS_PREFIX + '.producer.tps', i)
         statsdpipe.gauge(STATS_PREFIX + '.producer.mps', MESSAGES_PER_SECOND)
-        statsdpipe.gauge(STATS_PREFIX + '.producer.dt', dt)
+        statsdpipe.gauge(STATS_PREFIX + '.producer.cet', cet)
         statsdpipe.gauge(STATS_PREFIX + '.producer.csmt', csmt)
         statsdpipe.send()
         break
