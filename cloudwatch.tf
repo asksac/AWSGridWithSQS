@@ -19,7 +19,7 @@ resource "aws_cloudwatch_metric_alarm" "tasks_backlog_high_alarm" {
   comparison_operator       = "GreaterThanOrEqualToThreshold"
   evaluation_periods        = "2" # 2 periods of 60 seconds periods (total 2 minutes refresh)
   threshold                 = "5000"
-  alarm_description         = "Backlog Per Instance exceed 30s of Latency"
+  alarm_description         = "Backlog Per Instance is above 5000 or about 28s latency based on TPS"
   
   alarm_actions     = [aws_autoscaling_policy.workers_incr_policy.arn]
 
@@ -65,8 +65,8 @@ resource "aws_cloudwatch_metric_alarm" "tasks_backlog_low_alarm" {
   alarm_name                = "awsgrid_task_backlog_low_alarm"
   comparison_operator       = "LessThanOrEqualToThreshold"
   evaluation_periods        = "2" # 2 periods of 60 seconds periods (total 2 minutes refresh)
-  threshold                 = "2000"
-  alarm_description         = "Backlog Per Instance is under 10s of Latency"
+  threshold                 = "4000"
+  alarm_description         = "Backlog Per Instance is under 4000 or about 22s latency based on TPS"
   
   alarm_actions     = [aws_autoscaling_policy.workers_decr_policy.arn]
 
@@ -247,11 +247,11 @@ resource "aws_cloudwatch_dashboard" "main" {
             "height": 3,
             "properties": {
                 "metrics": [
-                    [ "AWS/AutoScaling", "GroupInServiceInstances", "AutoScalingGroupName", "awsgrid-with-sqs-worker-asg" ]
+                    [ "AWS/AutoScaling", "GroupInServiceInstances", "AutoScalingGroupName", "awsgrid-with-sqs-producer-asg" ]
                 ],
                 "view": "singleValue",
                 "region": "us-east-1",
-                "title": "Worker In Service Instances",
+                "title": "Producer In Service Instances",
                 "period": 60,
                 "stat": "Average"
             }
