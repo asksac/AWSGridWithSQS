@@ -123,7 +123,7 @@ resource "aws_cloudwatch_dashboard" "main" {
             "properties": {
                 "metrics": [
                     [ { "expression": "ANOMALY_DETECTION_BAND(m1, 2)", "label": "Anomaly Detection Band", "id": "e1" } ],
-                    [ "AWSGridWithSQS/AppMetrics", "awsgridwithsqs_worker_tps", "AutoScalingGroupName", "awsgrid-with-sqs-worker-asg", { "label": "Worker TPS [Avg: ${AVG}]", "id": "m1" } ]
+                    [ "AWSGridWithSQS/AppMetrics", "awsgridwithsqs_worker_tps", "AutoScalingGroupName", "awsgrid-with-sqs-worker-asg", { "label": "Worker TPS [Avg: $${AVG}]", "id": "m1" } ]
                 ],
                 "view": "timeSeries",
                 "stacked": false,
@@ -142,7 +142,7 @@ resource "aws_cloudwatch_dashboard" "main" {
             "properties": {
                 "metrics": [
                     [ { "expression": "ANOMALY_DETECTION_BAND(m1, 2)", "label": "Anomaly Detection Band", "id": "e1" } ],
-                    [ "AWSGridWithSQS/AppMetrics", "awsgridwithsqs_producer_tps", "AutoScalingGroupName", "awsgrid-with-sqs-producer-asg", { "label": "Producer TPS [Avg: ${AVG}]", "id": "m1" } ]
+                    [ "AWSGridWithSQS/AppMetrics", "awsgridwithsqs_producer_tps", "AutoScalingGroupName", "awsgrid-with-sqs-producer-asg", { "label": "Producer TPS [Avg: $${AVG}]", "id": "m1" } ]
                 ],
                 "view": "timeSeries",
                 "stacked": false,
