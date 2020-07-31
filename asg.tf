@@ -20,6 +20,7 @@ resource "aws_launch_configuration" "worker_launch_config" {
   name_prefix                 = "awsgrid-worker-lc-"
   image_id                    = var.ec2_ami_id
   instance_type               = "c5.large"
+  spot_price                  = "0.045"
   iam_instance_profile        = aws_iam_instance_profile.ec2_instance_profile.name
   security_groups             = [aws_security_group.allow_ssh_sg.id]
   key_name                    = var.ec2_ssh_keypair_name
@@ -34,7 +35,7 @@ resource "aws_autoscaling_group" "worker_asg" {
   name                  = "awsgrid-with-sqs-worker-asg"
   min_size              = 1
   max_size              = 20
-  desired_capacity      = 3
+  desired_capacity      = 4
   health_check_type     = "EC2"
   vpc_zone_identifier   = [aws_subnet.ec2_instance_subnet.id]
   launch_configuration  = aws_launch_configuration.worker_launch_config.name
