@@ -19,8 +19,8 @@ def main():
     csmt = 0
 
     while i <= MESSAGES_PER_SECOND: 
-      #bits = random.randint(25, 45) 
-      bits = random.randint(15, 25) 
+      #bits = random.randint(15, 25) 
+      bits = random.randint(25, 35) 
       number = generateLargePrime(bits)
 
       req_obj = dict(input = number, type = 'Decimal')
