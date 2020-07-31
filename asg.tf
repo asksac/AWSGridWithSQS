@@ -33,13 +33,13 @@ resource "aws_launch_configuration" "worker_launch_config" {
 resource "aws_autoscaling_group" "worker_asg" {
   name                  = "awsgrid-with-sqs-worker-asg"
   min_size              = 1
-  max_size              = 5
+  max_size              = 20
   desired_capacity      = 3
   health_check_type     = "EC2"
   vpc_zone_identifier   = [aws_subnet.ec2_instance_subnet.id]
   launch_configuration  = aws_launch_configuration.worker_launch_config.name
   metrics_granularity   = "1Minute"
-  enabled_metrics       = ['GroupDesiredCapacity', 'GroupInServiceInstances']
+  enabled_metrics       = ["GroupDesiredCapacity", "GroupInServiceInstances"]
 
   lifecycle {
     create_before_destroy = true
@@ -49,6 +49,22 @@ resource "aws_autoscaling_group" "worker_asg" {
     value = "awsgrid-workers"
     propagate_at_launch = true
   }
+}
+
+resource "aws_autoscaling_policy" "workers_incr_policy" {
+  name                   = "awsgrid-workers-incr-policy"
+  scaling_adjustment     = 1
+  adjustment_type        = "ChangeInCapacity"
+  cooldown               = 180 # 3 minutes
+  autoscaling_group_name = aws_autoscaling_group.worker_asg.name
+}
+
+resource "aws_autoscaling_policy" "workers_decr_policy" {
+  name                   = "awsgrid-workers-decr-policy"
+  scaling_adjustment     = -1
+  adjustment_type        = "ChangeInCapacity"
+  cooldown               = 300 # 5 minutes
+  autoscaling_group_name = aws_autoscaling_group.worker_asg.name
 }
 
 resource "aws_launch_configuration" "producer_launch_config" {
@@ -68,11 +84,13 @@ resource "aws_launch_configuration" "producer_launch_config" {
 resource "aws_autoscaling_group" "producer_asg" {
   name                  = "awsgrid-with-sqs-producer-asg"
   min_size              = 1
-  max_size              = 5
-  desired_capacity      = 1
+  max_size              = 10
+  desired_capacity      = 2
   health_check_type     = "EC2"
   vpc_zone_identifier   = [aws_subnet.ec2_instance_subnet.id]
   launch_configuration  = aws_launch_configuration.producer_launch_config.name
+  metrics_granularity   = "1Minute"
+  enabled_metrics       = ["GroupDesiredCapacity", "GroupInServiceInstances"]
 
   lifecycle {
     create_before_destroy = true
