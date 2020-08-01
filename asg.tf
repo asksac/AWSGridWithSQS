@@ -72,6 +72,7 @@ resource "aws_launch_configuration" "producer_launch_config" {
   name_prefix                 = "awsgrid-producer-lc-"
   image_id                    = var.ec2_ami_id
   instance_type               = "c5.large"
+  spot_price                  = "0.045"
   iam_instance_profile        = aws_iam_instance_profile.ec2_instance_profile.name
   security_groups             = [aws_security_group.allow_ssh_sg.id]
   key_name                    = var.ec2_ssh_keypair_name
