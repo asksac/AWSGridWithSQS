@@ -219,7 +219,7 @@ resource "aws_cloudwatch_dashboard" "main" {
                 "stacked": false,
                 "region": "us-east-1",
                 "stat": "Average",
-                "period": 300,
+                "period": 60,
                 "title": "Workers CPU Utilization"
             }
         },
@@ -237,7 +237,7 @@ resource "aws_cloudwatch_dashboard" "main" {
                 "stacked": false,
                 "region": "us-east-1",
                 "stat": "Average",
-                "period": 300,
+                "period": 60,
                 "title": "Producers CPU Utilization"
             }
         },
@@ -273,7 +273,7 @@ resource "aws_cloudwatch_dashboard" "main" {
                 ],
                 "region": "us-east-1",
                 "title": "Worker ASG Capacity",
-                "period": 300
+                "period": 60
             }
         },
         {
@@ -301,7 +301,8 @@ resource "aws_cloudwatch_dashboard" "main" {
             "height": 6,
             "properties": {
                 "metrics": [
-                    [ "AWSGridWithSQS/AppMetrics", "awsgridwithsqs_producer_csmt", "AutoScalingGroupName", "awsgrid-with-sqs-producer-asg", { "label": "Batch Send Message Time" } ]
+                    [ "AWSGridWithSQS/AppMetrics", "awsgridwithsqs_producer_csmt", "AutoScalingGroupName", "awsgrid-with-sqs-producer-asg", { "label": "Batch Send Message Time" } ],
+                    [ "AWSGridWithSQS/AppMetrics", "awsgridwithsqs_producer_cet", "AutoScalingGroupName", "awsgrid-with-sqs-producer-asg", { "label": "Batch Execution Time" } ]
                 ],
                 "view": "timeSeries",
                 "stacked": false,
