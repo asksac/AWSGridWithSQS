@@ -22,7 +22,7 @@ def main():
     while i <= MESSAGES_PER_SECOND: 
       est = time.time()
       #bits = random.randint(15, 25) 
-      bits = random.randint(25, 40) 
+      bits = random.randint(20, 35) 
       number = generateLargePrime(bits)
       cet += time.time() - est
 
