@@ -1,16 +1,24 @@
 resource "aws_cloudwatch_log_group" "cw_workers_log_group" {
-  name = "AWSGridWithSQS/Logs/Workers"
+  name                      = "AWSGridWithSQS/Logs/Workers"
+
+  lifecycle {
+    create_before_destroy   = true
+  }
 
   tags = {
-    app = "AWSGridWithSQS"
+    app                     = "AWSGridWithSQS"
   }
 }
 
 resource "aws_cloudwatch_log_group" "cw_producers_log_group" {
-  name = "AWSGridWithSQS/Logs/Producers"
+  name                      = "AWSGridWithSQS/Logs/Producers"
+
+  lifecycle {
+    create_before_destroy   = true
+  }
 
   tags = {
-    app = "AWSGridWithSQS"
+    app                      = "AWSGridWithSQS"
   }
 }
 
@@ -21,38 +29,38 @@ resource "aws_cloudwatch_metric_alarm" "tasks_backlog_high_alarm" {
   threshold                 = "5000"
   alarm_description         = "Backlog Per Instance is above 5000 or about 28s latency based on TPS"
   
-  alarm_actions     = [aws_autoscaling_policy.workers_incr_policy.arn]
+  alarm_actions             = [aws_autoscaling_policy.workers_incr_policy.arn]
 
   metric_query {
-    id          = "backlog_per_instance"
-    expression  = "pt/wrc"
-    label       = "Backlog Per Instance"
-    return_data = "true"
+    id                      = "backlog_per_instance"
+    expression              = "pt/wrc"
+    label                   = "Backlog Per Instance"
+    return_data             = "true"
   }
 
   metric_query {
-    id = "pt" # pending_tasks
+    id                      = "pt" # pending_tasks
 
     metric {
-      metric_name = "ApproximateNumberOfMessagesVisible"
-      namespace   = "AWS/SQS"
-      period      = "60"
-      stat        = "Average"
+      metric_name           = "ApproximateNumberOfMessagesVisible"
+      namespace             = "AWS/SQS"
+      period                = "60"
+      stat                  = "Average"
 
       dimensions = {
-        QueueName = "grid_tasks_queue"
+        QueueName           = "grid_tasks_queue"
       }
     }
   }
 
   metric_query {
-    id = "wrc" # workers_asg_running_capacity
+    id                      = "wrc" # workers_asg_running_capacity
 
     metric {
-      metric_name = "GroupInServiceInstances"
-      namespace   = "AWS/AutoScaling"
-      period      = "60"
-      stat        = "Average"
+      metric_name           = "GroupInServiceInstances"
+      namespace             = "AWS/AutoScaling"
+      period                = "60"
+      stat                  = "Average"
 
       dimensions = {
         AutoScalingGroupName = "awsgrid-with-sqs-worker-asg"
@@ -68,38 +76,38 @@ resource "aws_cloudwatch_metric_alarm" "tasks_backlog_low_alarm" {
   threshold                 = "4000"
   alarm_description         = "Backlog Per Instance is under 4000 or about 22s latency based on TPS"
   
-  alarm_actions     = [aws_autoscaling_policy.workers_decr_policy.arn]
+  alarm_actions             = [aws_autoscaling_policy.workers_decr_policy.arn]
 
   metric_query {
-    id          = "backlog_per_instance"
-    expression  = "pt/wrc"
-    label       = "Backlog Per Instance"
-    return_data = "true"
+    id                      = "backlog_per_instance"
+    expression              = "pt/wrc"
+    label                   = "Backlog Per Instance"
+    return_data             = "true"
   }
 
   metric_query {
-    id = "pt" # pending_tasks
+    id                      = "pt" # pending_tasks
 
     metric {
-      metric_name = "ApproximateNumberOfMessagesVisible"
-      namespace   = "AWS/SQS"
-      period      = "60"
-      stat        = "Average"
+      metric_name           = "ApproximateNumberOfMessagesVisible"
+      namespace             = "AWS/SQS"
+      period                = "60"
+      stat                  = "Average"
 
       dimensions = {
-        QueueName = "grid_tasks_queue"
+        QueueName           = "grid_tasks_queue"
       }
     }
   }
 
   metric_query {
-    id = "wrc" # workers_asg_running_capacity
+    id                      = "wrc" # workers_asg_running_capacity
 
     metric {
-      metric_name = "GroupInServiceInstances"
-      namespace   = "AWS/AutoScaling"
-      period      = "60"
-      stat        = "Average"
+      metric_name           = "GroupInServiceInstances"
+      namespace             = "AWS/AutoScaling"
+      period                = "60"
+      stat                  = "Average"
 
       dimensions = {
         AutoScalingGroupName = "awsgrid-with-sqs-worker-asg"
@@ -116,13 +124,12 @@ resource "aws_cloudwatch_dashboard" "main" {
     "widgets": [
         {
             "type": "metric",
-            "x": 6,
+            "x": 12,
             "y": 0,
             "width": 6,
             "height": 6,
             "properties": {
                 "metrics": [
-                    [ { "expression": "ANOMALY_DETECTION_BAND(m1, 2)", "label": "Anomaly Detection Band", "id": "e1" } ],
                     [ "AWSGridWithSQS/AppMetrics", "awsgridwithsqs_worker_tps", "AutoScalingGroupName", "awsgrid-with-sqs-worker-asg", { "label": "Worker TPS [Avg: $${AVG}]", "id": "m1" } ]
                 ],
                 "view": "timeSeries",
@@ -154,7 +161,7 @@ resource "aws_cloudwatch_dashboard" "main" {
         },
         {
             "type": "metric",
-            "x": 12,
+            "x": 18,
             "y": 0,
             "width": 6,
             "height": 6,
@@ -172,7 +179,7 @@ resource "aws_cloudwatch_dashboard" "main" {
         },
         {
             "type": "metric",
-            "x": 18,
+            "x": 6,
             "y": 0,
             "width": 6,
             "height": 6,
@@ -184,13 +191,13 @@ resource "aws_cloudwatch_dashboard" "main" {
                 "stacked": false,
                 "region": "us-east-1",
                 "period": 60,
-                "title": "Tasks Queue Message Count",
+                "title": "Tasks Queue Backlog",
                 "stat": "Average"
             }
         },
         {
             "type": "metric",
-            "x": 18,
+            "x": 12,
             "y": 6,
             "width": 6,
             "height": 3,
@@ -207,7 +214,7 @@ resource "aws_cloudwatch_dashboard" "main" {
         },
         {
             "type": "metric",
-            "x": 6,
+            "x": 12,
             "y": 9,
             "width": 6,
             "height": 6,
@@ -243,7 +250,7 @@ resource "aws_cloudwatch_dashboard" "main" {
         },
         {
             "type": "metric",
-            "x": 6,
+            "x": 0,
             "y": 6,
             "width": 6,
             "height": 3,
@@ -260,7 +267,7 @@ resource "aws_cloudwatch_dashboard" "main" {
         },
         {
             "type": "metric",
-            "x": 12,
+            "x": 18,
             "y": 6,
             "width": 6,
             "height": 3,
@@ -278,7 +285,7 @@ resource "aws_cloudwatch_dashboard" "main" {
         },
         {
             "type": "metric",
-            "x": 0,
+            "x": 6,
             "y": 6,
             "width": 6,
             "height": 3,
@@ -295,7 +302,7 @@ resource "aws_cloudwatch_dashboard" "main" {
         },
         {
             "type": "metric",
-            "x": 12,
+            "x": 6,
             "y": 9,
             "width": 6,
             "height": 6,
@@ -331,6 +338,28 @@ resource "aws_cloudwatch_dashboard" "main" {
                 "title": "Worker Nodes Performance",
                 "stat": "Average",
                 "period": 60
+            }
+        },
+        {
+            "type": "metric",
+            "x": 0,
+            "y": 15,
+            "width": 6,
+            "height": 6,
+            "properties": {
+                "metrics": [
+                    [ "AWS/Billing", "EstimatedCharges", "ServiceName", "AmazonEC2", "Currency", "USD", { "id": "m1" } ],
+                    [ "...", "AmazonCloudWatch", ".", ".", { "id": "m2" } ],
+                    [ "...", "AWSQueueService", ".", ".", { "id": "m3" } ],
+                    [ "...", "AmazonVPC", ".", ".", { "id": "m4" } ]
+                ],
+                "view": "bar",
+                "stacked": true,
+                "region": "us-east-1",
+                "title": "AWS Billing",
+                "period": 21600,
+                "setPeriodToTimeRange": true,
+                "stat": "Maximum"
             }
         }
     ]
