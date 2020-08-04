@@ -149,7 +149,7 @@ resource "aws_cloudwatch_dashboard" "main" {
             "properties": {
                 "metrics": [
                     [ { "expression": "ANOMALY_DETECTION_BAND(m1, 2)", "label": "Anomaly Detection Band", "id": "e1" } ],
-                    [ "AWSGridWithSQS/AppMetrics", "awsgridwithsqs_producer_tps", "AutoScalingGroupName", "awsgrid-with-sqs-producer-asg", { "label": "Producer TPS [Avg: $${AVG}]", "id": "m1" } ]
+                    [ "AWSGridWithSQS/AppMetrics", "awsgridwithsqs_producer_throughput", "AutoScalingGroupName", "awsgrid-with-sqs-producer-asg", { "label": "Producer TPS [Avg: $${AVG}]", "id": "m1" } ]
                 ],
                 "view": "timeSeries",
                 "stacked": false,
@@ -308,8 +308,8 @@ resource "aws_cloudwatch_dashboard" "main" {
             "height": 6,
             "properties": {
                 "metrics": [
-                    [ "AWSGridWithSQS/AppMetrics", "awsgridwithsqs_producer_csmt", "AutoScalingGroupName", "awsgrid-with-sqs-producer-asg", { "label": "Batch Send Message Time" } ],
-                    [ "AWSGridWithSQS/AppMetrics", "awsgridwithsqs_producer_cet", "AutoScalingGroupName", "awsgrid-with-sqs-producer-asg", { "label": "Batch Execution Time" } ]
+                    [ "AWSGridWithSQS/AppMetrics", "awsgridwithsqs_producer_send_msg_time", "AutoScalingGroupName", "awsgrid-with-sqs-producer-asg", { "label": "Batch Send Message Time" } ],
+                    [ "AWSGridWithSQS/AppMetrics", "awsgridwithsqs_producer_exec_time", "AutoScalingGroupName", "awsgrid-with-sqs-producer-asg", { "label": "Batch Execution Time" } ]
                 ],
                 "view": "timeSeries",
                 "stacked": false,
