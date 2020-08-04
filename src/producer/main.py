@@ -52,7 +52,7 @@ LOG_FILENAME = '/var/log/AWSGridWithSQS/producer-main.log'
 logging.basicConfig(filename=LOG_FILENAME, format='%(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
 
 STATSD_PREFIX = 'awsgridwithsqs_producer_'
-STATSD_RATE = 0.1 # rate = 1/10 as metrics_collection_interval = 10 seconds
+STATSD_RATE = 1 # rate = 1/10 as metrics_collection_interval = 10 seconds
 
 main()      
 
