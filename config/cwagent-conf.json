@@ -31,7 +31,7 @@
     "metrics_collected": {
       "statsd": { 
         "metrics_collection_interval": 10,
-        "metrics_aggregation_interval": 30,
+        "metrics_aggregation_interval": 60,
         "service_address": ":8125"
       },
       "cpu": {
