@@ -8,6 +8,11 @@
       "files": {
         "collect_list": [
           {
+            "file_path": "/var/log/AWSGridWithSQS/supervisor-main.log",  
+            "log_group_name": "AWSGridWithSQS/Logs/Supervisors",  
+            "log_stream_name": "Supervisor_{instance_id}_main.log" 
+          },
+          {
             "file_path": "/var/log/AWSGridWithSQS/worker-main.log",  
             "log_group_name": "AWSGridWithSQS/Logs/Workers",  
             "log_stream_name": "Worker_{instance_id}_main.log" 
