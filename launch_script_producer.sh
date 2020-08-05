@@ -3,9 +3,6 @@
 # enables logs from user data script to be viewable via console
 exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
 
-# debugging only
-pwd
-
 # install necessary dependencies 
 yum -y install git python3 python-pip3 jq awslogs
 pip3 install --upgrade boto3 statsd
