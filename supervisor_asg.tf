@@ -7,7 +7,7 @@ resource "aws_launch_template" "supervisor_launch_template" {
     threads_per_core            = 1
   }
   image_id                      = var.ec2_ami_id
-  instance_type                 = "t3.nano"
+  instance_type                 = "t3.small"
 
   iam_instance_profile {
     name                        = aws_iam_instance_profile.ec2_instance_profile.name
