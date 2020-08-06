@@ -24,7 +24,7 @@ resource "aws_launch_template" "worker_launch_template" {
     core_count                  = 1
     threads_per_core            = 1
   }
-  image_id                      = var.ec2_ami_id
+  image_id                      = data.aws_ami.ec2_ami.id
   instance_type                 = "c5.large"
   instance_market_options {
     market_type                 = "spot"
@@ -140,7 +140,7 @@ resource "aws_launch_template" "producer_launch_template" {
     core_count                  = 1
     threads_per_core            = 1
   }
-  image_id                      = var.ec2_ami_id
+  image_id                      = data.aws_ami.ec2_ami.id
   instance_type                 = "c5.large"
   instance_market_options {
     market_type                 = "spot"
@@ -213,7 +213,7 @@ resource "aws_autoscaling_group" "producer_asg" {
 /*
 resource "aws_instance" "test_ec2_instance" {
   # Amazon Linux 2 AMI 2.0.20200520.1 x86_64 HVM gp2
-  ami = var.ec2_ami_id
+  ami = data.aws_ami.ec2_ami.id
   instance_type = "t2.micro"
   iam_instance_profile = aws_iam_instance_profile.ec2_instance_profile.name
   security_groups = [aws_security_group.allow_ssh_sg.name]

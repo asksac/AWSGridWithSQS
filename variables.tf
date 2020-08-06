@@ -1,8 +1,3 @@
-variable "ec2_ami_id" {
-  type    = string
-  default = "ami-09d95fab7fff3776c"
-}
-
 variable "ec2_vpc_id" {
   type    = string
   default = "vpc-7eb0f404"

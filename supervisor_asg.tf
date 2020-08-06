@@ -6,7 +6,7 @@ resource "aws_launch_template" "supervisor_launch_template" {
     core_count                  = 1
     threads_per_core            = 1
   }
-  image_id                      = var.ec2_ami_id
+  image_id                      = data.aws_ami.ec2_ami.id
   instance_type                 = "t3.small"
 
   iam_instance_profile {
