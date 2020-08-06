@@ -71,12 +71,13 @@ def main():
         ]
       )
 
+      logging.info(f'Published metric data [backlog_per_instance] = {backlog_per_instance}')
+
       if (LOG_LEVEL == 'DEBUG'): 
         logging.debug(f'Tasks queue ApproximateNumberOfMessages = {backlog_count}')
         logging.debug(f'Worker ASG describe info = {worker_asg_info}')
         logging.debug(f'Worker ASG desired count = {desired_instances_count}')
         #logging.debug(f'Worker ASG instances count = {all_instances_count}')
-        logging.debug(f'Published metric data [backlog_per_instance] = {backlog_per_instance}')
 
       et = time.time() 
       dt = et - st
@@ -103,7 +104,7 @@ LOG_LEVEL = 'INFO'
 TASKS_QUEUE_NAME = 'grid_tasks_queue'
 WORKER_ASG_NAME = 'awsgrid-with-sqs-worker-asg'
 SUPERVISOR_ASG_NAME = 'awsgrid-with-sqs-supervisor-asg'
-METRIC_INTERVAL = 15 # send a metric every x seconds
+METRIC_INTERVAL = 30 # send a metric every x seconds
 
 # main
 if __name__ == '__main__':
