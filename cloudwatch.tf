@@ -1,9 +1,13 @@
+resource "aws_cloudwatch_log_group" "cw_supervisors_log_group" {
+  name                      = "AWSGridWithSQS/Logs/Supervisors"
+
+  tags = {
+    app                     = "AWSGridWithSQS"
+  }
+}
+
 resource "aws_cloudwatch_log_group" "cw_workers_log_group" {
   name                      = "AWSGridWithSQS/Logs/Workers"
-
-  lifecycle {
-    create_before_destroy   = true
-  }
 
   tags = {
     app                     = "AWSGridWithSQS"
@@ -13,15 +17,12 @@ resource "aws_cloudwatch_log_group" "cw_workers_log_group" {
 resource "aws_cloudwatch_log_group" "cw_producers_log_group" {
   name                      = "AWSGridWithSQS/Logs/Producers"
 
-  lifecycle {
-    create_before_destroy   = true
-  }
-
   tags = {
     app                      = "AWSGridWithSQS"
   }
 }
 
+/*
 resource "aws_cloudwatch_metric_alarm" "tasks_backlog_high_alarm" {
   alarm_name                = "awsgrid_task_backlog_high_alarm"
   comparison_operator       = "GreaterThanOrEqualToThreshold"
@@ -115,6 +116,7 @@ resource "aws_cloudwatch_metric_alarm" "tasks_backlog_low_alarm" {
     }
   }
 }
+*/
 
 resource "aws_cloudwatch_dashboard" "main" {
   dashboard_name = "AWSGridWithSQS_Main_Dashboard"
