@@ -71,7 +71,7 @@ resource "aws_autoscaling_group" "worker_asg" {
   name                  = "awsgrid-with-sqs-worker-asg"
   min_size              = 1
   max_size              = 500
-  desired_capacity      = 2
+  desired_capacity      = 1
   health_check_type     = "EC2"
   vpc_zone_identifier   = [aws_subnet.ec2_instance_subnet.id]
   launch_template {
@@ -94,12 +94,33 @@ resource "aws_autoscaling_group" "worker_asg" {
   }
 }
 
+resource "aws_autoscaling_policy" "workers_target_policy" {
+  name                        = "awsgrid-workers-incr-policy"
+  policy_type                 = "TargetTrackingScaling"
+  estimated_instance_warmup   = 90
+  autoscaling_group_name      = aws_autoscaling_group.worker_asg.name
+
+  target_tracking_configuration {
+    customized_metric_specification {
+      namespace   = "AWSGridWithSQS/AppMetrics"
+      metric_dimension {
+        name  = "AutoScalingGroupName"
+        value = "awsgrid-with-sqs-supervisor-asg"
+      }
+      metric_name = "backlog_per_instance"
+      statistic   = "Average"
+    }
+    target_value = 5000
+  }
+}
+
+/*
 resource "aws_autoscaling_policy" "workers_incr_policy" {
-  name                   = "awsgrid-workers-incr-policy"
-  scaling_adjustment     = 1
-  adjustment_type        = "ChangeInCapacity"
-  cooldown               = 180 # 3 minutes
-  autoscaling_group_name = aws_autoscaling_group.worker_asg.name
+  name                        = "awsgrid-workers-incr-policy"
+  scaling_adjustment          = 1
+  adjustment_type             = "ChangeInCapacity"
+  cooldown                    = 180 # 3 minutes
+  autoscaling_group_name      = aws_autoscaling_group.worker_asg.name
 }
 
 resource "aws_autoscaling_policy" "workers_decr_policy" {
@@ -109,6 +130,7 @@ resource "aws_autoscaling_policy" "workers_decr_policy" {
   cooldown               = 300 # 5 minutes
   autoscaling_group_name = aws_autoscaling_group.worker_asg.name
 }
+*/
 
 resource "aws_launch_template" "producer_launch_template" {
   name_prefix                   = "awsgrid-producer-lc-"
