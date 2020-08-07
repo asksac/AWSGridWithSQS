@@ -23,6 +23,6 @@ data "aws_ami" "ec2_ami" {
   }
 }
 
-output "ec2_dns_address" {
+output "ec2_ami_arn" {
   value = data.aws_ami.ec2_ami.arn
 }
