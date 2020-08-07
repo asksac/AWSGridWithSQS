@@ -1,5 +1,6 @@
 import signal, sys
-import logging, time, json, random
+import logging, logging.handlers
+import time, json, random
 import boto3
 from threading import Timer
 
@@ -39,6 +40,7 @@ def main():
   asg = boto3.client('autoscaling')
   cw = boto3.client('cloudwatch')
 
+  exception_count = 0
   while True:
     try: 
       st = time.time()
@@ -51,7 +53,10 @@ def main():
       desired_instances_count = int(worker_asg_info['AutoScalingGroups'][0]['DesiredCapacity'])
       #all_instances_count = len(worker_asg_info['AutoScalingGroups'][0]['Instances'])
 
-      backlog_per_instance = backlog_count / desired_instances_count
+      if desired_instances_count > 0: 
+        backlog_per_instance = backlog_count / desired_instances_count
+      else: 
+        backlog_per_instance = 0
 
       cw.put_metric_data(
         Namespace = 'AWSGridWithSQS/AppMetrics', 
@@ -87,13 +92,13 @@ def main():
       exception_count = 0 # reset exception count
 
     except Exception as e: 
+      logging.error('Exception caught during supervisor looping', exc_info=e)
       exception_count += 1
       if (exception_count >= 3): 
         logging.error('Exception not resolved after 3 retries, exiting program')
-        print('Exiting program after exceeding exception retry counter!')
+        print('Exiting program after 3 consecutive exceptions!')
         break
       else:
-        logging.error('Exception caught during supervisor looping', exc_info=e)
         logging.error('Retrying after 30seconds...')
         time.sleep(30) # wait for 30 seconds
 
@@ -101,14 +106,16 @@ def main():
 # global variables with default values
 LOG_FILENAME = '/var/log/AWSGridWithSQS/supervisor-main.log'
 LOG_LEVEL = 'INFO'
+MAX_LOG_FILESIZE = 10*1024*1024 # 10 Mbs
 TASKS_QUEUE_NAME = 'grid_tasks_queue'
 WORKER_ASG_NAME = 'awsgrid-with-sqs-worker-asg'
 SUPERVISOR_ASG_NAME = 'awsgrid-with-sqs-supervisor-asg'
-METRIC_INTERVAL = 30 # send a metric every x seconds
+METRIC_INTERVAL = 15 # send a metric every x seconds
 
 # main
 if __name__ == '__main__':
-  logging.basicConfig(filename=LOG_FILENAME, format='%(asctime)s - %(levelname)s - %(message)s', level=LOG_LEVEL)
+  logHandler = logging.handlers.RotatingFileHandler(LOG_FILENAME, mode='a', maxBytes=MAX_LOG_FILESIZE, backupCount=5)
+  logging.basicConfig(handlers=[logHandler], format='%(asctime)s - %(levelname)s - %(message)s', level=LOG_LEVEL)
   signal.signal(signal.SIGINT, exit_handler)
   signal.signal(signal.SIGTERM, exit_handler)
   print('Press Ctrl+C to exit')

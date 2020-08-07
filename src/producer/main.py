@@ -1,14 +1,17 @@
 import signal, sys
-import logging, time, json, random
+import logging, logging.handlers
+import time, json, random
 import boto3
 from primeNumbers import generateLargePrime
 from statsd import StatsClient
+
 
 def exit_handler(sig, frame): 
   logging.info('Exit handler invoked, preparing to exit gracefully.')
   logging.shutdown()
   print('Goodbye!')
   sys.exit(0)
+
 
 def loadParams():
   # create an ssm service client
@@ -21,6 +24,8 @@ def loadParams():
       v = p['Value']
       if (n == 'log_filename'):
         LOG_FILENAME = v
+      elif (n == 'log_level'):
+        LOG_LEVEL = v
       elif (n == 'stats_prefix'):
         STATS_PREFIX = v
       elif (n == 'stats_rate'):
@@ -78,6 +83,8 @@ def main():
 
 # global variables with default values
 LOG_FILENAME = '/var/log/AWSGridWithSQS/producer-main.log'
+LOG_LEVEL = 'INFO'
+MAX_LOG_FILESIZE = 10*1024*1024 # 10 Mbs
 STATS_PREFIX = 'awsgridwithsqs_producer_'
 STATS_RATE = 0.1 # rate = 1/10 as metrics_collection_interval = 10 seconds
 TASKS_QUEUE_NAME = 'grid_tasks_queue'
@@ -87,7 +94,8 @@ PRIME_MAX_BITS = 30
 
 # main
 if __name__ == '__main__':
-  logging.basicConfig(filename=LOG_FILENAME, format='%(asctime)s - %(levelname)s - %(message)s', level=logging.DEBUG)
+  logHandler = logging.handlers.RotatingFileHandler(LOG_FILENAME, mode='a', maxBytes=MAX_LOG_FILESIZE, backupCount=5)
+  logging.basicConfig(handlers=[logHandler], format='%(asctime)s - %(levelname)s - %(message)s', level=LOG_LEVEL)
   signal.signal(signal.SIGINT, exit_handler)
   signal.signal(signal.SIGTERM, exit_handler)
   print('Press Ctrl+C to exit')
