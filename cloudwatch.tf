@@ -329,10 +329,10 @@ resource "aws_cloudwatch_dashboard" "main" {
             "height": 6,
             "properties": {
                 "metrics": [
-                    [ "AWSGridWithSQS/AppMetrics", "awsgridwithsqs_worker_crmt", "AutoScalingGroupName", "awsgrid-with-sqs-worker-asg", { "label": "Batch Read Message Time" } ],
-                    [ ".", "awsgridwithsqs_worker_csmt", ".", ".", { "label": "Batch Send Message Time" } ],
-                    [ ".", "awsgridwithsqs_worker_cdmt", ".", ".", { "label": "Batch Delete Message Time" } ],
-                    [ ".", "awsgridwithsqs_worker_cet", ".", ".", { "label": "Batch Execution Time" } ]
+                    [ "AWSGridWithSQS/AppMetrics", "awsgridwithsqs_worker_read_time", "AutoScalingGroupName", "awsgrid-with-sqs-worker-asg", { "label": "Batch Read Message Time" } ],
+                    [ ".", "awsgridwithsqs_worker_send_time", ".", ".", { "label": "Batch Send Message Time" } ],
+                    [ ".", "awsgridwithsqs_worker_delete_time", ".", ".", { "label": "Batch Delete Message Time" } ],
+                    [ ".", "awsgridwithsqs_worker_execution_time", ".", ".", { "label": "Batch Execution Time" } ]
                 ],
                 "view": "timeSeries",
                 "stacked": false,
