@@ -1,55 +1,47 @@
-import logging, time, json
+import signal, sys
+import logging, logging.handlers
+import time, json, random
 import boto3
 from factorizeInteger import factorize
 from statsd import StatsClient
 
-# expects a request as JSON string, returns a tuple with 
-# response_json string and execution duration_time in seconds
-def handleRequest(request_json):
-  response_obj = None
-  dt = 0
+def exit_handler(sig, frame): 
+  logging.info('Exit handler invoked, preparing to exit gracefully.')
+  logging.shutdown()
+  print('Goodbye!')
+  sys.exit(0)
 
-  try: 
-    # record start time
-    st = time.time()
 
-    logging.debug('Received message body:', request_json)
-    request_obj = json.loads(request_json)
+def loadParams():
+  # create an ssm service client
+  ssm = boto3.client('ssm')
+  path = '/dev/AWSGridWithSQS/worker/'
+  params = ssm.get_parameters_by_path(Path = path)
+  if params and params['Parameters']: 
+    for p in params['Parameters']: 
+      n = p['Name'][len(path):] # strip out path prefix
+      v = p['Value']
+      if (n == 'log_filename'):
+        LOG_FILENAME = v
+      elif (n == 'log_level'):
+        LOG_LEVEL = v
+      elif (n == 'queue_polling_wait_time'):
+        QUEUE_POLLING_WAIT_TIME = int(v)
+      elif (n == 'queue_repolling_sleep_time'):
+        QUEUE_REPOLLING_SLEEP_TIME = int(v)
+      elif (n == 'visibility_timeout'):
+        VISIBILITY_TIMEOUT = int(v)
+      elif (n == 'batch_size'):
+        BATCH_SIZE = int(v)
+      elif (n == 'stats_prefix'):
+        STATS_PREFIX = v
+      elif (n == 'stats_rate'):
+        STATS_RATE = float(v)
+      elif (n == 'tasks_queue_name'):
+        TASKS_QUEUE_NAME = v
+      elif (n == 'results_queue_name'):
+        RESULTS_QUEUE_NAME = v
 
-    request_input = request_obj.get('input')
-    request_type = request_obj.get('type')
-
-    number = 0
-
-    if (request_type is None) or (request_type in ['decimal', 'dec', 'Decimal']):
-      # input is a decimal number
-      number = int(request_input)
-    else: 
-      raise ValueError('Unsupported type parameter is request body')
-
-    factors = factorize(number)
-
-    # execution time duration
-    dt = time.time() - st
-
-    response_obj = dict(
-      output = dict(factors = factors), 
-      type = 'Decimal', 
-      executionTimeSeconds = dt
-    )
-
-  except ValueError as ve:
-    logging.error('Invalid JSON in message body', exc_info=ve)
-    response_obj = dict(
-      error = dict(message = 'Invalid JSON in message body', code = 400)
-    )
-  except Exception as e:
-    logging.error('Unknown error while processing request', exc_info=e)
-    response_obj = dict(
-      error = dict(message = 'Unknown error while processing request', code = 500)
-    )
-
-  return (json.dumps(response_obj), dt)
 
 # polls an SQS queue continuously and processes requests 
 def main(): 
@@ -57,60 +49,73 @@ def main():
   sqs = boto3.resource('sqs')
 
   # get the input and output queues
-  input_queue = sqs.get_queue_by_name(QueueName='grid_tasks_queue')
-  output_queue = sqs.get_queue_by_name(QueueName='grid_results_queue')
-
-  st = time.time() # start time
-  tps = 0 # counter for tps
-  reset_tps = False
-
-  rmt = 0 # receive message time
-  crmt = 0 # cumulative receive message time
-
-  et = 0 # execution time
-  cet = 0 # cumulative execution time per second
-
-  smt = 0 # send message time
-  csmt = 0 # cumulative send message time
-
-  dmt = 0 # delete message time
-  cdmt = 0 # cumulative delete message time
+  input_queue = sqs.get_queue_by_name(QueueName=TASKS_QUEUE_NAME)
+  output_queue = sqs.get_queue_by_name(QueueName=RESULTS_QUEUE_NAME)
 
   send_ack = delete_ack = None
 
+  statsd = StatsClient()
+  statsdpipe = statsd.pipeline()
+
   while True: 
-    statsdpipe = statsd.pipeline()
     try: 
       # read message(s) from the input queue
-      rm_st = time.time()
+      read_timer = statsdpipe.timer(STATS_PREFIX + 'read_time', rate=STATS_RATE).start()
       messages = input_queue.receive_messages(
         AttributeNames=['ApproximateNumberOfMessages'],
         MaxNumberOfMessages=BATCH_SIZE, 
         WaitTimeSeconds=QUEUE_POLLING_WAIT_TIME, 
         VisibilityTimeout=VISIBILITY_TIMEOUT
       )
-      rm_et = time.time()
-      rmt = (rm_et - rm_st)
-      crmt += rmt
     except Exception as e: 
       logging.error('Error receiving messages from queue', exc_info=e)
+    finally: 
+      if read_timer: read_timer.stop() # read_time
 
     if messages: 
       response_entries = []
       deletion_entries = []
       n = len(messages)
-      # rate = 1/10 since metrics_collection_interval = 10 seconds
-      statsdpipe.incr(STATS_PREFIX + '.worker.tasks', n, rate=0.1) 
+      statsdpipe.incr(STATS_PREFIX + 'tasks_handled', n, rate=STATS_RATE) 
+
+      exec_timer = statsdpipe.timer(STATS_PREFIX + 'execution_time', rate=STATS_RATE).start()
       for i in range(n): 
         id = messages[i].message_id
         body = messages[i].body
         handle = messages[i].receipt_handle
-        #anom = messages[i].attributes['ApproximateNumberOfMessages']
 
         logging.debug(f'Processing request message {i+1} of {n} with id [{id}]')
 
-        (response_json, et) = handleRequest(body)
-        cet += et
+        response_obj = None
+        try: 
+          request_obj = json.loads(body)
+          request_input = request_obj.get('input')
+          request_type = request_obj.get('type')
+
+          number = 0
+          if (request_type is None) or (request_type in ['decimal', 'dec', 'Decimal']):
+            # input is a decimal number
+            number = int(request_input)
+          else: 
+            raise ValueError('Unsupported type parameter is request body')
+
+          factors = factorize(number)
+
+          response_obj = dict(
+            output = dict(factors = factors), 
+            type = 'Decimal'
+          )
+        except ValueError as ve:
+          logging.error('Invalid JSON in message body', exc_info=ve)
+          response_obj = dict(
+            error = dict(message = 'Invalid JSON in message body', code = 400)
+          )
+        except Exception as e:
+          logging.error('Unknown error while processing request', exc_info=e)
+          response_obj = dict(
+            error = dict(message = 'Unknown error while processing request', code = 500)
+          )
+        response_json = json.dumps(response_obj)
 
         response_attr = dict(requestMessageId = dict(
           StringValue = id, 
@@ -127,65 +132,35 @@ def main():
           Id = str(i), 
           ReceiptHandle = handle
         ))
+      
+      exec_timer.stop() # execution_time
 
       try: 
-        sm_st = time.time()
+        send_timer = statsdpipe.timer(STATS_PREFIX + 'send_time', rate=STATS_RATE).start()
         send_ack = output_queue.send_messages(Entries=response_entries) 
-        sm_et = time.time()
-        smt = (sm_et - sm_st)
-        csmt += smt
-
         if send_ack:   
-          logging.info(f'Processed and sent {n} response messages to output queue, executed in {smt}s')
-
+          logging.info(f'Processed and sent {n} response messages to output queue')
       except Exception as e:
         logging.error('Error sending response message', exc_info=e)
-
-      tps += n
+      finally: 
+        if send_timer: send_timer.stop() # send_time
 
       try: 
-        dm_st = time.time()
+        delete_timer = statsdpipe.timer(STATS_PREFIX + 'delete_time', rate=STATS_RATE).start()
         delete_ack = input_queue.delete_messages(Entries = deletion_entries)
-        dm_et = time.time()
-        dmt = (dm_et - dm_st)
-        cdmt += dmt
+        if delete_ack:   
+          logging.debug(f'Deleted {n} messages from input queue')
       except Exception as e:
         logging.error('Error deleting batch messages', exc_info=e)
-        if delete_ack:   
-          logging.info(f'Deleted {n} messages from input queue, executed in {dmt}s')
+      finally: 
+        if delete_timer: delete_timer.stop()
 
-      logging.info(f'Processed {n} request messages in {cet}s')
-    else: # no messages received from polling
+      statsdpipe.incr(STATS_PREFIX + 'tps', n, rate=STATS_RATE) 
+    else: 
+      # no messages received from polling
       logging.info(f'No messages received after polling for {QUEUE_POLLING_WAIT_TIME}s. Will retry after {QUEUE_REPOLLING_SLEEP_TIME}s.')
       time.sleep(QUEUE_REPOLLING_SLEEP_TIME)
-      reset_tps = True
 
-    iter_time = time.time() - st
-    if iter_time >= 1.0 or reset_tps: 
-      if tps: 
-        logging.info(f'Handled {tps} requests per second, with execution stats:')
-        logging.debug(f'>> Total Iteration Time = {iter_time}')
-        logging.debug(f'>> Cumulative Execution Time = {cet}')
-        logging.debug(f'>> Cumulative Receive Message Time = {crmt}')
-        logging.debug(f'>> Cumulative Send Message Time = {csmt}')
-        logging.debug(f'>> Cumulative Delete Message Time = {cdmt}')
-        statsdpipe.gauge(STATS_PREFIX + '.worker.tps', tps)
-        statsdpipe.gauge(STATS_PREFIX + '.worker.iter_time', iter_time)
-        statsdpipe.gauge(STATS_PREFIX + '.worker.cet', cet)
-        statsdpipe.gauge(STATS_PREFIX + '.worker.crmt', crmt)
-        statsdpipe.gauge(STATS_PREFIX + '.worker.csmt', csmt)
-        statsdpipe.gauge(STATS_PREFIX + '.worker.cdmt', cdmt)
-      else: 
-        statsdpipe.gauge(STATS_PREFIX + '.worker.tps', 0)
-        statsdpipe.gauge(STATS_PREFIX + '.worker.iter_time', iter_time)
-        statsdpipe.gauge(STATS_PREFIX + '.worker.cet', cet)
-        statsdpipe.gauge(STATS_PREFIX + '.worker.crmt', crmt)
-        statsdpipe.gauge(STATS_PREFIX + '.worker.csmt', csmt)
-        statsdpipe.gauge(STATS_PREFIX + '.worker.cdmt', cdmt)
-      st = time.time()
-      tps = 0
-      reset_tps = False
-      cet = crmt = csmt = cdmt = 0.0
     statsdpipe.send()
 
 # ---- 
@@ -221,19 +196,26 @@ following attribute is set in the response message:
 
 '''
 
+# global variables with default values
 LOG_FILENAME = '/var/log/AWSGridWithSQS/worker-main.log'
-logging.basicConfig(filename=LOG_FILENAME, format='%(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
-
+LOG_LEVEL = 'INFO'
+MAX_LOG_FILESIZE = 10*1024*1024 # 10 Mbs
 QUEUE_POLLING_WAIT_TIME = 10 # 20 sec is maximum 
 QUEUE_REPOLLING_SLEEP_TIME = 0 
 VISIBILITY_TIMEOUT = 120 # 2 mins
 BATCH_SIZE = 10 # number of messages to read/process in each batch, maximum 10
-STATS_PREFIX = 'awsgridwithsqs'
+STATS_PREFIX = 'awsgridwithsqs_worker_'
+STATS_RATE = 0.1 # rate = 1/10 as metrics_collection_interval = 10 seconds
+TASKS_QUEUE_NAME = 'grid_tasks_queue'
+RESULTS_QUEUE_NAME = 'grid_results_queue'
 
-statsd = StatsClient()
 
-# call the main function
-main()
-
-# flush and close all log handlers 
-logging.shutdown()
+# main
+if __name__ == '__main__':
+  logHandler = logging.handlers.RotatingFileHandler(LOG_FILENAME, mode='a', maxBytes=MAX_LOG_FILESIZE, backupCount=5)
+  logging.basicConfig(handlers=[logHandler], format='%(asctime)s - %(levelname)s - %(message)s', level=LOG_LEVEL)
+  signal.signal(signal.SIGINT, exit_handler)
+  signal.signal(signal.SIGTERM, exit_handler)
+  print('Press Ctrl+C to exit')
+  loadParams()
+  main()
