@@ -52,7 +52,7 @@ resource "aws_launch_template" "worker_launch_template" {
   }
 
   monitoring {
-    enabled                     = false
+    enabled                     = true
   }
 
   user_data                     = filebase64("launch_script_worker.sh")
@@ -170,7 +170,7 @@ resource "aws_launch_template" "producer_launch_template" {
   }
 
   monitoring {
-    enabled                     = false
+    enabled                     = true
   }
 
   user_data                     = filebase64("launch_script_producer.sh")
@@ -243,7 +243,7 @@ resource "aws_launch_template" "supervisor_launch_template" {
   }
 
   monitoring {
-    enabled                     = false
+    enabled                     = true
   }
 
   user_data                     = filebase64("launch_script_supervisor.sh")
