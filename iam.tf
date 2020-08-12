@@ -37,8 +37,15 @@ resource "aws_iam_role_policy" "ec2_exec_policy" {
   "Statement": [
     {
       "Action": [
-        "s3:*", 
-        "sqs:*" 
+        "sqs:*", 
+        "sqs:GetQueueAttributes", 
+        "sqs:GetQueueUrl", 
+        "ssm:GetParametersByPath",
+        "ssm:GetParameters",
+        "ssm:GetParameter", 
+        "cloudwatch:PutMetricData", 
+        "autoscaling:DescribeAutoScalingGroups", 
+        "autoscaling:DescribePolicies"
       ],
       "Effect": "Allow",
       "Resource": "*"
