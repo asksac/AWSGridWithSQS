@@ -1,3 +1,5 @@
+/*
+# using latest amazon linux 2 ami
 data "aws_ami" "ec2_ami" {
   most_recent = true
   owners      = ["amazon"]
@@ -21,6 +23,18 @@ data "aws_ami" "ec2_ami" {
     name      = "virtualization-type"
     values    = ["hvm"]
   }
+}
+*/
+
+data "aws_ami" "ec2_ami" {
+  most_recent = true
+  owners      = ["self"]
+
+  filter {
+    name      = "name"
+    values    = ["awsgridwithsqs-*"]
+  }
+
 }
 
 output "ec2_ami_arn" {
