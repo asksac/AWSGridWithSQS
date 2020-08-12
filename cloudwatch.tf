@@ -122,26 +122,8 @@ resource "aws_cloudwatch_dashboard" "main" {
   dashboard_name = "AWSGridWithSQS_Main_Dashboard"
 
   dashboard_body = <<EOF
-{
+  {
     "widgets": [
-        {
-            "type": "metric",
-            "x": 12,
-            "y": 0,
-            "width": 6,
-            "height": 6,
-            "properties": {
-                "metrics": [
-                    [ "AWSGridWithSQS/AppMetrics", "awsgridwithsqs_worker_tps", "AutoScalingGroupName", "awsgrid-with-sqs-worker-asg", { "label": "Worker TPS [Avg: $${AVG}]", "id": "m1" } ]
-                ],
-                "view": "timeSeries",
-                "stacked": false,
-                "region": "us-east-1",
-                "title": "Worker Throughput (TPS)",
-                "period": 60,
-                "stat": "Average"
-            }
-        },
         {
             "type": "metric",
             "x": 0,
@@ -149,34 +131,21 @@ resource "aws_cloudwatch_dashboard" "main" {
             "width": 6,
             "height": 6,
             "properties": {
-                "metrics": [
-                    [ { "expression": "ANOMALY_DETECTION_BAND(m1, 2)", "label": "Anomaly Detection Band", "id": "e1" } ],
-                    [ "AWSGridWithSQS/AppMetrics", "awsgridwithsqs_producer_throughput", "AutoScalingGroupName", "awsgrid-with-sqs-producer-asg", { "label": "Producer TPS [Avg: $${AVG}]", "id": "m1" } ]
-                ],
-                "view": "timeSeries",
-                "stacked": false,
-                "region": "us-east-1",
-                "period": 60,
-                "stat": "Average",
-                "title": "Producer Throughput (TPS)"
-            }
-        },
-        {
-            "type": "metric",
-            "x": 18,
-            "y": 0,
-            "width": 6,
-            "height": 6,
-            "properties": {
-                "metrics": [
-                    [ "AWS/SQS", "ApproximateNumberOfMessagesVisible", "QueueName", "grid_results_queue" ]
-                ],
-                "view": "timeSeries",
-                "stacked": false,
-                "region": "us-east-1",
-                "title": "Results Queue Message Count",
-                "period": 60,
-                "stat": "Average"
+              "metrics": [
+                  [ "AWSGridWithSQS/AppMetrics", "awsgridwithsqs_producer_throughput", "AutoScalingGroupName", "awsgrid-with-sqs-producer-asg", { "label": "Producer TPS [Avg: $${AVG}]", "id": "m1" } ]
+              ],
+              "view": "timeSeries",
+              "stacked": true,
+              "region": "us-east-1",
+              "period": 60,
+              "stat": "Average",
+              "yAxis": {
+                  "left": {
+                      "showUnits": false,
+                      "label": "Per Second"
+                  }
+              },
+              "title": "Producer Throughput (TPS)"
             }
         },
         {
@@ -194,60 +163,59 @@ resource "aws_cloudwatch_dashboard" "main" {
                 "region": "us-east-1",
                 "period": 60,
                 "title": "Tasks Queue Backlog",
+                "yAxis": {
+                    "left": {
+                        "showUnits": false
+                    }
+                },
                 "stat": "Average"
             }
         },
         {
             "type": "metric",
             "x": 12,
-            "y": 6,
+            "y": 0,
             "width": 6,
-            "height": 3,
+            "height": 6,
             "properties": {
                 "metrics": [
-                    [ "AWS/AutoScaling", "GroupInServiceInstances", "AutoScalingGroupName", "awsgrid-with-sqs-worker-asg" ]
+                    [ "AWSGridWithSQS/AppMetrics", "awsgridwithsqs_worker_tps", "AutoScalingGroupName", "awsgrid-with-sqs-worker-asg", { "label": "Worker TPS [Avg: $${AVG}]", "id": "m1" } ]
                 ],
-                "view": "singleValue",
+                "view": "timeSeries",
+                "stacked": true,
                 "region": "us-east-1",
-                "title": "Worker In Service Instances",
                 "period": 60,
+                "stat": "Average",
+                "yAxis": {
+                    "left": {
+                        "showUnits": false,
+                        "label": "Per Second"
+                    }
+                },
+                "title": "Worker Throughput (TPS)"
+            }
+        },
+        {
+            "type": "metric",
+            "x": 18,
+            "y": 0,
+            "width": 6,
+            "height": 6,
+            "properties": {
+                "metrics": [
+                    [ "AWS/SQS", "ApproximateNumberOfMessagesVisible", "QueueName", "grid_results_queue" ]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "us-east-1",
+                "title": "Results Queue Message Count",
+                "period": 60,
+                "yAxis": {
+                    "left": {
+                        "showUnits": false
+                    }
+                },
                 "stat": "Average"
-            }
-        },
-        {
-            "type": "metric",
-            "x": 12,
-            "y": 9,
-            "width": 6,
-            "height": 6,
-            "properties": {
-                "metrics": [
-                    [ { "expression": "SEARCH(' {AWSGridWithSQS/AppMetrics, AutoScalingGroupName, InstanceId, cpu} AutoScalingGroupName=\"awsgrid-with-sqs-worker-asg\" MetricName=\"cpu_usage_user\" ', 'Average', 60)", "label": "Expression1", "id": "e1", "region": "us-east-1" } ]
-                ],
-                "view": "timeSeries",
-                "stacked": false,
-                "region": "us-east-1",
-                "stat": "Average",
-                "period": 60,
-                "title": "Workers CPU Utilization"
-            }
-        },
-        {
-            "type": "metric",
-            "x": 0,
-            "y": 9,
-            "width": 6,
-            "height": 6,
-            "properties": {
-                "metrics": [
-                    [ { "expression": "SEARCH(' {AWSGridWithSQS/AppMetrics, AutoScalingGroupName, InstanceId, cpu} AutoScalingGroupName=\"awsgrid-with-sqs-producer-asg\" MetricName=\"cpu_usage_user\" ', 'Average', 60)", "label": "Expression1", "id": "e1", "region": "us-east-1" } ]
-                ],
-                "view": "timeSeries",
-                "stacked": false,
-                "region": "us-east-1",
-                "stat": "Average",
-                "period": 60,
-                "title": "Producers CPU Utilization"
             }
         },
         {
@@ -264,7 +232,41 @@ resource "aws_cloudwatch_dashboard" "main" {
                 "region": "us-east-1",
                 "title": "Producer In Service Instances",
                 "period": 60,
-                "stat": "Average"
+                "stat": "p99"
+            }
+        },
+        {
+            "type": "metric",
+            "x": 6,
+            "y": 6,
+            "width": 6,
+            "height": 3,
+            "properties": {
+                "view": "timeSeries",
+                "stacked": false,
+                "metrics": [
+                    [ "AWS/AutoScaling", "GroupInServiceInstances", "AutoScalingGroupName", "awsgrid-with-sqs-producer-asg" ],
+                    [ ".", "GroupDesiredCapacity", ".", "." ]
+                ],
+                "region": "us-east-1",
+                "title": "Producer ASG Capacity"
+            }
+        },
+        {
+            "type": "metric",
+            "x": 12,
+            "y": 6,
+            "width": 6,
+            "height": 3,
+            "properties": {
+                "metrics": [
+                    [ "AWS/AutoScaling", "GroupInServiceInstances", "AutoScalingGroupName", "awsgrid-with-sqs-worker-asg" ]
+                ],
+                "view": "singleValue",
+                "region": "us-east-1",
+                "title": "Worker In Service Instances",
+                "period": 60,
+                "stat": "p99"
             }
         },
         {
@@ -287,19 +289,21 @@ resource "aws_cloudwatch_dashboard" "main" {
         },
         {
             "type": "metric",
-            "x": 6,
-            "y": 6,
+            "x": 0,
+            "y": 9,
             "width": 6,
-            "height": 3,
+            "height": 6,
             "properties": {
+                "metrics": [
+                  [ "AWSGridWithSQS/AppMetrics", "cpu_usage_user", "AutoScalingGroupName", "awsgrid-with-sqs-producer-asg", { "id": "m1", "label": "User CPU Usage [Avg: $${AVG}]" } ],
+                  [ ".", "cpu_usage_system", ".", ".", { "id": "m2", "label": "System CPU Usage [Avg: $${AVG}]" } ]
+                ],
                 "view": "timeSeries",
                 "stacked": false,
-                "metrics": [
-                    [ "AWS/AutoScaling", "GroupInServiceInstances", "AutoScalingGroupName", "awsgrid-with-sqs-producer-asg" ],
-                    [ ".", "GroupDesiredCapacity", ".", "." ]
-                ],
                 "region": "us-east-1",
-                "title": "Producer ASG Capacity"
+                "stat": "Average",
+                "period": 60,
+                "title": "Producers CPU Utilization"
             }
         },
         {
@@ -318,7 +322,32 @@ resource "aws_cloudwatch_dashboard" "main" {
                 "region": "us-east-1",
                 "title": "Producer Nodes Performance",
                 "stat": "Average",
-                "period": 60
+                "period": 60,
+                "yAxis": {
+                    "left": {
+                        "showUnits": false,
+                        "label": "Milliseconds"
+                    }
+                }
+            }
+        },
+        {
+            "type": "metric",
+            "x": 12,
+            "y": 9,
+            "width": 6,
+            "height": 6,
+            "properties": {
+              "metrics": [
+                  [ "AWSGridWithSQS/AppMetrics", "cpu_usage_user", "AutoScalingGroupName", "awsgrid-with-sqs-worker-asg", { "id": "m1", "label": "User CPU Usage [Avg: $${AVG}]" } ],
+                  [ ".", "cpu_usage_system", ".", ".", { "id": "m2", "label": "System CPU Usage [Avg: $${AVG}]" } ]
+              ],
+              "view": "timeSeries",
+              "stacked": false,
+              "region": "us-east-1",
+              "stat": "Average",
+              "period": 60,
+              "title": "Workers CPU Utilization"
             }
         },
         {
@@ -339,7 +368,13 @@ resource "aws_cloudwatch_dashboard" "main" {
                 "region": "us-east-1",
                 "title": "Worker Nodes Performance",
                 "stat": "Average",
-                "period": 60
+                "period": 60,
+                "yAxis": {
+                    "left": {
+                        "showUnits": false,
+                        "label": "Milliseconds"
+                    }
+                }
             }
         },
         {
@@ -362,6 +397,71 @@ resource "aws_cloudwatch_dashboard" "main" {
                 "period": 21600,
                 "setPeriodToTimeRange": true,
                 "stat": "Maximum"
+            }
+        }, 
+        {
+            "type": "metric",
+            "x": 6,
+            "y": 15,
+            "width": 6,
+            "height": 6,
+            "properties": {
+                "metrics": [
+                    [ "AWSGridWithSQS/AppMetrics", "backlog_per_instance", "AutoScalingGroupName", "awsgrid-with-sqs-supervisor-asg", { "label": "BacklogPerInstance [last: $${LAST}]" } ]
+                ],
+                "view": "timeSeries",
+                "stacked": true,
+                "region": "us-east-1",
+                "title": "Backlog Per Instance",
+                "stat": "Average",
+                "period": 30,
+                "yAxis": {
+                    "left": {
+                        "showUnits": false
+                    }
+                }
+            }
+        },
+        {
+            "type": "metric",
+            "x": 12,
+            "y": 15,
+            "width": 6,
+            "height": 6,
+            "properties": {
+                "metrics": [
+                    [ "AWS/SQS", "NumberOfMessagesSent", "QueueName", "grid_results_dlq", { "label": "Results DLQ Count" } ],
+                    [ "...", "grid_tasks_dlq", { "label": "Tasks DLQ Count" } ]
+                ],
+                "view": "timeSeries",
+                "stacked": true,
+                "region": "us-east-1",
+                "title": "Dead Letter Queue Volume",
+                "stat": "Average",
+                "period": 60,
+                "setPeriodToTimeRange": true
+            }
+        },
+        {
+            "type": "metric",
+            "x": 18,
+            "y": 15,
+            "width": 6,
+            "height": 6,
+            "properties": {
+                "metrics": [
+                    [ "AWS/EC2", "NetworkPacketsIn", "AutoScalingGroupName", "Producer-asg" ],
+                    [ "...", "Worker-asg" ],
+                    [ ".", "NetworkPacketsOut", ".", "Producer-asg" ],
+                    [ "...", "Worker-asg" ]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "us-east-1",
+                "title": "Network Packets In/Out",
+                "stat": "Average",
+                "period": 60,
+                "setPeriodToTimeRange": true
             }
         }
     ]
