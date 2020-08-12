@@ -86,7 +86,7 @@ LOG_FILENAME = '/var/log/AWSGridWithSQS/producer-main.log'
 LOG_LEVEL = 'INFO'
 MAX_LOG_FILESIZE = 10*1024*1024 # 10 Mbs
 STATS_PREFIX = 'awsgridwithsqs_producer_'
-STATS_RATE = 0.1 # rate = 1/10 as metrics_collection_interval = 10 seconds
+STATS_RATE = 1 # rate = 1/metrics_collection_interval in cwagent-config.json
 TASKS_QUEUE_NAME = 'grid_tasks_queue'
 BATCH_SIZE = 10
 PRIME_MIN_BITS = 20
