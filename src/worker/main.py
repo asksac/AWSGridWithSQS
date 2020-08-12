@@ -166,33 +166,29 @@ def main():
 # ---- 
 '''
 task/request messages must be of the following format: 
-
 {
   "input": "796951910868696778761193", 
   "type": "decimal"
 }
 
 response messages will be of the following format: 
-
 {
   "output": {
     "factors": [1, 2, 3]
   }, 
-  "type": "decimal", 
-  "executionTimeSeconds": 123
+  "type": "decimal" 
 }
 
-or 
+following attribute is set in response messages: 
+  requestMessageId: "c5ab7e20-bb20-11ea-a37a-acde48001122"
 
+response errors will be of the following format: 
 {
   "error": {
     "message": "Invalid input data", 
     "code": 10
   }
 }
-
-following attribute is set in the response message: 
-  requestMessageId: "c5ab7e20-bb20-11ea-a37a-acde48001122"
 
 '''
 
@@ -205,7 +201,7 @@ QUEUE_REPOLLING_SLEEP_TIME = 0
 VISIBILITY_TIMEOUT = 120 # 2 mins
 BATCH_SIZE = 10 # number of messages to read/process in each batch, maximum 10
 STATS_PREFIX = 'awsgridwithsqs_worker_'
-STATS_RATE = 0.1 # rate = 1/10 as metrics_collection_interval = 10 seconds
+STATS_RATE = 1 # rate = 1/metrics_collection_interval in cwagent-config.json
 TASKS_QUEUE_NAME = 'grid_tasks_queue'
 RESULTS_QUEUE_NAME = 'grid_results_queue'
 
