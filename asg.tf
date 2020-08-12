@@ -18,6 +18,14 @@ resource "aws_security_group" "allow_ssh_sg" {
 
 # Worker ASG
 
+data "template_file" "worker_user_data_script" {
+  template = <<EOF
+#!/bin/bash -xe
+exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
+sudo -b -u ec2-user python3 /home/ec2-user/AWSGridWithSQS/src/worker/main.py
+EOF
+}
+
 resource "aws_launch_template" "worker_launch_template" {
   name_prefix                   = "awsgrid-worker-lc-"
   description                   = "Worker autoscale launch template"
@@ -41,21 +49,21 @@ resource "aws_launch_template" "worker_launch_template" {
   } 
   key_name                      = var.ec2_ssh_keypair_name
   #vpc_security_group_ids        = [ aws_security_group.allow_ssh_sg.id ]
-  placement {
-    availability_zone           = var.ec2_subnet_az
-  }
+  #placement {
+  #  availability_zone           = var.ec2_subnet_az
+  #}
   network_interfaces {
-    associate_public_ip_address = true
+    associate_public_ip_address = false
     delete_on_termination       = true 
     security_groups             = [ aws_security_group.allow_ssh_sg.id ]
-    subnet_id                   = aws_subnet.ec2_instance_subnet.id
   }
 
   monitoring {
     enabled                     = true
   }
 
-  user_data                     = filebase64("launch_script_worker.sh")
+  #user_data                     = filebase64("launch_script_worker.sh")
+  user_data                     = base64encode(data.template_file.worker_user_data_script.template) 
 
   lifecycle {
     create_before_destroy       = true
@@ -75,7 +83,10 @@ resource "aws_autoscaling_group" "worker_asg" {
   max_size              = 500
   desired_capacity      = 1
   health_check_type     = "EC2"
-  vpc_zone_identifier   = [aws_subnet.ec2_instance_subnet.id]
+  vpc_zone_identifier   = [
+    aws_subnet.ec2_instance_subnet_1.id, 
+    aws_subnet.ec2_instance_subnet_2.id
+  ]
   launch_template {
     id      = aws_launch_template.worker_launch_template.id
     version = "$Latest"
@@ -85,6 +96,9 @@ resource "aws_autoscaling_group" "worker_asg" {
 
   lifecycle {
     create_before_destroy = true
+    ignore_changes = [
+      desired_capacity,
+    ]
   }
 
   depends_on            = [ aws_launch_template.producer_launch_template ]
@@ -99,7 +113,7 @@ resource "aws_autoscaling_group" "worker_asg" {
 resource "aws_autoscaling_policy" "workers_target_policy" {
   name                        = "awsgrid-workers-incr-policy"
   policy_type                 = "TargetTrackingScaling"
-  estimated_instance_warmup   = 90
+  estimated_instance_warmup   = 10
   autoscaling_group_name      = aws_autoscaling_group.worker_asg.name
 
   target_tracking_configuration {
@@ -136,6 +150,14 @@ resource "aws_autoscaling_policy" "workers_decr_policy" {
 
 # Producer ASG
 
+data "template_file" "producer_user_data_script" {
+  template = <<EOF
+#!/bin/bash -xe
+exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
+sudo -b -u ec2-user python3 /home/ec2-user/AWSGridWithSQS/src/producer/main.py
+EOF
+}
+
 resource "aws_launch_template" "producer_launch_template" {
   name_prefix                   = "awsgrid-producer-lc-"
   description                   = "Producer autoscale launch template"
@@ -159,21 +181,22 @@ resource "aws_launch_template" "producer_launch_template" {
   } 
   key_name                      = var.ec2_ssh_keypair_name
   #vpc_security_group_ids        = [ aws_security_group.allow_ssh_sg.id ]
-  placement {
-    availability_zone           = var.ec2_subnet_az
-  }
+  #placement {
+  #  availability_zone           = var.ec2_subnet_az
+  #}
   network_interfaces {
     associate_public_ip_address = true
     delete_on_termination       = true 
     security_groups             = [ aws_security_group.allow_ssh_sg.id ]
-    subnet_id                   = aws_subnet.ec2_instance_subnet.id
+    #subnet_id                   = aws_subnet.ec2_instance_subnet.id
   }
 
   monitoring {
     enabled                     = true
   }
 
-  user_data                     = filebase64("launch_script_producer.sh")
+  #user_data                     = filebase64("launch_script_producer.sh")
+  user_data                     = base64encode(data.template_file.producer_user_data_script.template) 
 
   lifecycle {
     create_before_destroy       = true
@@ -193,7 +216,10 @@ resource "aws_autoscaling_group" "producer_asg" {
   max_size              = 10
   desired_capacity      = 1
   health_check_type     = "EC2"
-  vpc_zone_identifier   = [aws_subnet.ec2_instance_subnet.id]
+  vpc_zone_identifier   = [
+    aws_subnet.ec2_instance_subnet_1.id, 
+    aws_subnet.ec2_instance_subnet_2.id
+  ]
   launch_template {
     id      = aws_launch_template.producer_launch_template.id
     version = "$Latest"
@@ -203,6 +229,9 @@ resource "aws_autoscaling_group" "producer_asg" {
 
   lifecycle {
     create_before_destroy = true
+    ignore_changes = [
+      desired_capacity,
+    ]
   }
 
   depends_on            = [ aws_launch_template.producer_launch_template ]
@@ -216,6 +245,14 @@ resource "aws_autoscaling_group" "producer_asg" {
 
 # Supervisor ASG
 
+data "template_file" "supervisor_user_data_script" {
+  template = <<EOF
+#!/bin/bash -xe
+exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
+sudo -b -u ec2-user python3 /home/ec2-user/AWSGridWithSQS/src/supervisor/main.py
+EOF
+}
+
 resource "aws_launch_template" "supervisor_launch_template" {
   name_prefix                   = "awsgrid-supervisor-lc-"
   description                   = "Supervisor autoscale launch template"
@@ -225,28 +262,29 @@ resource "aws_launch_template" "supervisor_launch_template" {
     threads_per_core            = 1
   }
   image_id                      = data.aws_ami.ec2_ami.id
-  instance_type                 = "t3.small"
+  instance_type                 = "t3.small" # t3.nano is too slow to startup
 
   iam_instance_profile {
     name                        = aws_iam_instance_profile.ec2_instance_profile.name
   } 
   key_name                      = var.ec2_ssh_keypair_name
   #vpc_security_group_ids        = [ aws_security_group.allow_ssh_sg.id ]
-  placement {
-    availability_zone           = var.ec2_subnet_az
-  }
+  #placement {
+  #  availability_zone           = var.ec2_subnet_az
+  #}
   network_interfaces {
     associate_public_ip_address = true
     delete_on_termination       = true 
     security_groups             = [ aws_security_group.allow_ssh_sg.id ]
-    subnet_id                   = aws_subnet.ec2_instance_subnet.id
+    #subnet_id                   = aws_subnet.ec2_instance_subnet.id
   }
 
   monitoring {
     enabled                     = true
   }
 
-  user_data                     = filebase64("launch_script_supervisor.sh")
+  #user_data                     = filebase64("launch_script_supervisor.sh")
+  user_data                     = base64encode(data.template_file.supervisor_user_data_script.template) 
 
   lifecycle {
     create_before_destroy       = true
@@ -267,7 +305,10 @@ resource "aws_autoscaling_group" "supervisor_asg" {
   max_size              = 2
   desired_capacity      = 1
   health_check_type     = "EC2"
-  vpc_zone_identifier   = [aws_subnet.ec2_instance_subnet.id]
+  vpc_zone_identifier   = [
+    aws_subnet.ec2_instance_subnet_1.id, 
+    aws_subnet.ec2_instance_subnet_2.id
+  ]
   launch_template {
     id      = aws_launch_template.supervisor_launch_template.id
     version = "$Latest"
@@ -289,7 +330,7 @@ resource "aws_autoscaling_group" "supervisor_asg" {
 }
 
 /*
-resource "aws_instance" "test_ec2_instance" {
+resource "aws_instance" "test_instance" {
   # Amazon Linux 2 AMI 2.0.20200520.1 x86_64 HVM gp2
   ami = data.aws_ami.ec2_ami.id
   instance_type = "t2.micro"
