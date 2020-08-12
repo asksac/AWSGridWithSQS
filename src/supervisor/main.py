@@ -56,7 +56,7 @@ def main():
       if desired_instances_count > 0: 
         backlog_per_instance = backlog_count / desired_instances_count
       else: 
-        backlog_per_instance = 0
+        backlog_per_instance = backlog_count # we don't want to return 0 or less
 
       cw.put_metric_data(
         Namespace = 'AWSGridWithSQS/AppMetrics', 
