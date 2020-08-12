@@ -2,6 +2,12 @@
 __pycache__/
 *.py[cod]
 
+# Backup files
+**/*.backup
+
+# Mac finder hidden directories
+.DS_Store
+
 # Local .terraform directories
 **/.terraform/*
 
