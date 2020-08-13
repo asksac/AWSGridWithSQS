@@ -70,10 +70,13 @@ def main(params):
   statsd = StatsClient()
   statsdpipe = statsd.pipeline()
 
+  sprefix = params['STATS_PREFIX']
+  srate = params['STATS_RATE']
+
   while True: 
     try: 
       # read message(s) from the input queue
-      read_timer = statsdpipe.timer(params['STATS_PREFIX'] + 'read_time', rate=params['STATS_RATE']).start()
+      read_timer = statsdpipe.timer(sprefix + 'read_time', rate=srate).start()
       messages = input_queue.receive_messages(
         AttributeNames=['ApproximateNumberOfMessages'],
         MaxNumberOfMessages=params['BATCH_SIZE'], 
@@ -89,9 +92,9 @@ def main(params):
       response_entries = []
       deletion_entries = []
       n = len(messages)
-      statsdpipe.incr(params['STATS_PREFIX'] + 'tasks_handled', n, rate=params['STATS_RATE']) 
+      statsdpipe.incr(sprefix + 'tasks_handled', n, rate=srate) 
 
-      exec_timer = statsdpipe.timer(params['STATS_PREFIX'] + 'execution_time', rate=params['STATS_RATE']).start()
+      exec_timer = statsdpipe.timer(sprefix + 'execution_time', rate=srate).start()
       for i in range(n): 
         id = messages[i].message_id
         body = messages[i].body
@@ -149,7 +152,7 @@ def main(params):
       exec_timer.stop() # execution_time
 
       try: 
-        send_timer = statsdpipe.timer(params['STATS_PREFIX'] + 'send_time', rate=params['STATS_RATE']).start()
+        send_timer = statsdpipe.timer(sprefix + 'send_time', rate=srate).start()
         send_ack = output_queue.send_messages(Entries=response_entries) 
         if send_ack:   
           logging.info(f'Processed and sent {n} response messages to output queue')
@@ -159,7 +162,7 @@ def main(params):
         if send_timer: send_timer.stop() # send_time
 
       try: 
-        delete_timer = statsdpipe.timer(params['STATS_PREFIX'] + 'delete_time', rate=params['STATS_RATE']).start()
+        delete_timer = statsdpipe.timer(sprefix + 'delete_time', rate=srate).start()
         delete_ack = input_queue.delete_messages(Entries = deletion_entries)
         if delete_ack:   
           logging.debug(f'Deleted {n} messages from input queue')
@@ -168,7 +171,7 @@ def main(params):
       finally: 
         if delete_timer: delete_timer.stop()
 
-      statsdpipe.incr(params['STATS_PREFIX'] + 'tps', n, rate=params['STATS_RATE']) 
+      statsdpipe.incr(sprefix + 'tps', n, rate=srate) 
     else: 
       # no messages received from polling
       logging.debug(f"No messages received after polling for {params['QUEUE_POLLING_WAIT_TIME']}s. Will retry after {params['QUEUE_REPOLLING_SLEEP_TIME']}s.")
