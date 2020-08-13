@@ -1,25 +1,17 @@
 resource "aws_cloudwatch_log_group" "cw_supervisors_log_group" {
   name                      = "AWSGridWithSQS/Logs/Supervisors"
-
-  tags = {
-    app                     = "AWSGridWithSQS"
-  }
+  tags                      = local.common_tags
 }
 
 resource "aws_cloudwatch_log_group" "cw_workers_log_group" {
   name                      = "AWSGridWithSQS/Logs/Workers"
+  tags                      = local.common_tags
 
-  tags = {
-    app                     = "AWSGridWithSQS"
-  }
 }
 
 resource "aws_cloudwatch_log_group" "cw_producers_log_group" {
   name                      = "AWSGridWithSQS/Logs/Producers"
-
-  tags = {
-    app                      = "AWSGridWithSQS"
-  }
+  tags                      = local.common_tags
 }
 
 /*
@@ -119,9 +111,8 @@ resource "aws_cloudwatch_metric_alarm" "tasks_backlog_low_alarm" {
 */
 
 resource "aws_cloudwatch_dashboard" "main" {
-  dashboard_name = "AWSGridWithSQS_Main_Dashboard"
-
-  dashboard_body = <<EOF
+  dashboard_name            = "Main_Dashboard_AWSGridWithSQS"
+  dashboard_body            = <<EOF
   {
     "widgets": [
         {
@@ -145,7 +136,7 @@ resource "aws_cloudwatch_dashboard" "main" {
                       "label": "Per Second"
                   }
               },
-              "title": "Producer Throughput (TPS)"
+              "title": "Average Producer Throughput (TPS)"
             }
         },
         {
@@ -162,13 +153,13 @@ resource "aws_cloudwatch_dashboard" "main" {
                 "stacked": false,
                 "region": "us-east-1",
                 "period": 60,
-                "title": "Tasks Queue Backlog",
+                "title": "Tasks Queue Backlog Count",
                 "yAxis": {
                     "left": {
                         "showUnits": false
                     }
                 },
-                "stat": "Average"
+                "stat": "p95"
             }
         },
         {
@@ -192,7 +183,7 @@ resource "aws_cloudwatch_dashboard" "main" {
                         "label": "Per Second"
                     }
                 },
-                "title": "Worker Throughput (TPS)"
+                "title": "Average Worker Throughput (TPS)"
             }
         },
         {
@@ -215,7 +206,7 @@ resource "aws_cloudwatch_dashboard" "main" {
                         "showUnits": false
                     }
                 },
-                "stat": "Average"
+                "stat": "p95"
             }
         },
         {
@@ -232,7 +223,7 @@ resource "aws_cloudwatch_dashboard" "main" {
                 "region": "us-east-1",
                 "title": "Producer In Service Instances",
                 "period": 60,
-                "stat": "p99"
+                "stat": "p95"
             }
         },
         {
@@ -266,7 +257,7 @@ resource "aws_cloudwatch_dashboard" "main" {
                 "region": "us-east-1",
                 "title": "Worker In Service Instances",
                 "period": 60,
-                "stat": "p99"
+                "stat": "p95"
             }
         },
         {
@@ -321,7 +312,7 @@ resource "aws_cloudwatch_dashboard" "main" {
                 "stacked": false,
                 "region": "us-east-1",
                 "title": "Producer Nodes Performance",
-                "stat": "Average",
+                "stat": "p95",
                 "period": 60,
                 "yAxis": {
                     "left": {
@@ -367,7 +358,7 @@ resource "aws_cloudwatch_dashboard" "main" {
                 "stacked": false,
                 "region": "us-east-1",
                 "title": "Worker Nodes Performance",
-                "stat": "Average",
+                "stat": "p95",
                 "period": 60,
                 "yAxis": {
                     "left": {
@@ -413,7 +404,7 @@ resource "aws_cloudwatch_dashboard" "main" {
                 "stacked": true,
                 "region": "us-east-1",
                 "title": "Backlog Per Instance",
-                "stat": "Average",
+                "stat": "p95",
                 "period": 30,
                 "yAxis": {
                     "left": {
@@ -437,7 +428,7 @@ resource "aws_cloudwatch_dashboard" "main" {
                 "stacked": true,
                 "region": "us-east-1",
                 "title": "Dead Letter Queue Volume",
-                "stat": "Average",
+                "stat": "Maximum",
                 "period": 60,
                 "setPeriodToTimeRange": true
             }
@@ -459,7 +450,7 @@ resource "aws_cloudwatch_dashboard" "main" {
                 "stacked": false,
                 "region": "us-east-1",
                 "title": "Network Packets In/Out",
-                "stat": "Average",
+                "stat": "Maximum",
                 "period": 60,
                 "setPeriodToTimeRange": true
             }

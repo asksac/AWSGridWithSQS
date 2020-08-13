@@ -10,9 +10,7 @@ resource "aws_ssm_parameter" "producer_batch_size" {
   name        = "${local.producer_path}/batch_size"
   value       = "10"
   overwrite   = true
-  tags = {
-      app = "AWSGridWithSQS"
-  }
+  tags = local.common_tags
 }
 
 resource "aws_ssm_parameter" "producer_prime_min_bits" {
@@ -21,9 +19,7 @@ resource "aws_ssm_parameter" "producer_prime_min_bits" {
   name        = "${local.producer_path}/prime_min_bits"
   value       = "15"
   overwrite   = true
-  tags = {
-      app = "AWSGridWithSQS"
-  }
+  tags = local.common_tags
 }
 
 resource "aws_ssm_parameter" "producer_prime_max_bits" {
@@ -32,9 +28,7 @@ resource "aws_ssm_parameter" "producer_prime_max_bits" {
   name        = "${local.producer_path}/prime_max_bits"
   value       = "25"
   overwrite   = true
-  tags = {
-      app = "AWSGridWithSQS"
-  }
+  tags = local.common_tags
 }
 
 resource "aws_ssm_parameter" "supervisor_metric_interval" {
@@ -43,9 +37,7 @@ resource "aws_ssm_parameter" "supervisor_metric_interval" {
   name        = "${local.supervisor_path}/metric_interval"
   value       = "15"
   overwrite   = true
-  tags = {
-      app = "AWSGridWithSQS"
-  }
+  tags = local.common_tags
 }
 
 resource "aws_ssm_parameter" "worker_batch_size" {
@@ -54,9 +46,7 @@ resource "aws_ssm_parameter" "worker_batch_size" {
   name        = "${local.worker_path}/batch_size"
   value       = "10"
   overwrite   = true
-  tags = {
-      app = "AWSGridWithSQS"
-  }
+  tags = local.common_tags
 }
 
 resource "aws_ssm_parameter" "worker_stats_rate" {
@@ -65,8 +55,6 @@ resource "aws_ssm_parameter" "worker_stats_rate" {
   name        = "${local.worker_path}/stats_rate"
   value       = "1"
   overwrite   = true
-  tags = {
-      app = "AWSGridWithSQS"
-  }
+  tags = local.common_tags
 }
 

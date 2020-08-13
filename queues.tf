@@ -10,17 +10,12 @@ resource "aws_sqs_queue" "grid_tasks_queue" {
     deadLetterTargetArn       = aws_sqs_queue.grid_tasks_dlq.arn
     maxReceiveCount           = 4
   })
-
-  tags = {
-    app = "AWSGridWithSQS"
-  }
+  tags                        = local.common_tags
 }
 
 resource "aws_sqs_queue" "grid_tasks_dlq" {
-  name = "grid_tasks_dlq"
-  tags = {
-    app = "AWSGridWithSQS"
-  }
+  name                        = "grid_tasks_dlq"
+  tags                        = local.common_tags
 }
 
 # define grid_results_queue
@@ -35,15 +30,10 @@ resource "aws_sqs_queue" "grid_results_queue" {
     deadLetterTargetArn       = aws_sqs_queue.grid_results_dlq.arn
     maxReceiveCount           = 4
   })
-
-  tags = {
-    app = "AWSGridWithSQS"
-  }
+  tags                        = local.common_tags
 }
 
 resource "aws_sqs_queue" "grid_results_dlq" {
-  name = "grid_results_dlq"
-  tags = {
-    app = "AWSGridWithSQS"
-  }
+  name                        = "grid_results_dlq"
+  tags                        = local.common_tags
 }
