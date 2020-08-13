@@ -22,6 +22,7 @@ data "template_file" "worker_user_data_script" {
   template = <<EOF
 #!/bin/bash -xe
 exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
+export AWS_ENV='${var.aws_env}'
 sudo -b -u ec2-user python3 /home/ec2-user/AWSGridWithSQS/src/worker/main.py
 EOF
 }
@@ -53,7 +54,7 @@ resource "aws_launch_template" "worker_launch_template" {
   #  availability_zone           = var.ec2_subnet_az
   #}
   network_interfaces {
-    associate_public_ip_address = false
+    associate_public_ip_address = true
     delete_on_termination       = true 
     security_groups             = [ aws_security_group.allow_ssh_sg.id ]
   }
@@ -71,17 +72,15 @@ resource "aws_launch_template" "worker_launch_template" {
 
   tag_specifications {
     resource_type               = "instance"
-    tags = {
-      app = "AWSGridWithSQS"
-    }
+    tags                        = local.common_tags
   }
 }
 
 resource "aws_autoscaling_group" "worker_asg" {
   name                  = "awsgrid-with-sqs-worker-asg"
   min_size              = 0
-  max_size              = 500
-  desired_capacity      = 1
+  max_size              = 2000
+  desired_capacity      = 0
   health_check_type     = "EC2"
   vpc_zone_identifier   = [
     aws_subnet.ec2_instance_subnet_1.id, 
@@ -103,17 +102,22 @@ resource "aws_autoscaling_group" "worker_asg" {
 
   depends_on            = [ aws_launch_template.producer_launch_template ]
 
-  tag {
-    key = "Name"
-    value = "awsgrid-workers"
-    propagate_at_launch = true
-  }
+  tags                  = concat(
+    [
+      {
+        key = "Name"
+        value = "awsgrid-workers"
+        propagate_at_launch = true
+      }
+    ], 
+    local.asg_instance_tags
+  )
 }
 
 resource "aws_autoscaling_policy" "workers_target_policy" {
-  name                        = "awsgrid-workers-incr-policy"
+  name                        = "awsgrid-workers-target-policy"
   policy_type                 = "TargetTrackingScaling"
-  estimated_instance_warmup   = 10
+  estimated_instance_warmup   = 30
   autoscaling_group_name      = aws_autoscaling_group.worker_asg.name
 
   target_tracking_configuration {
@@ -124,7 +128,7 @@ resource "aws_autoscaling_policy" "workers_target_policy" {
         value = "awsgrid-with-sqs-supervisor-asg"
       }
       metric_name = "backlog_per_instance"
-      statistic   = "Average"
+      statistic   = "Maximum"
     }
     target_value = 5000
   }
@@ -154,6 +158,7 @@ data "template_file" "producer_user_data_script" {
   template = <<EOF
 #!/bin/bash -xe
 exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
+export AWS_ENV='${var.aws_env}'
 sudo -b -u ec2-user python3 /home/ec2-user/AWSGridWithSQS/src/producer/main.py
 EOF
 }
@@ -204,25 +209,23 @@ resource "aws_launch_template" "producer_launch_template" {
 
   tag_specifications {
     resource_type               = "instance"
-    tags = {
-      app = "AWSGridWithSQS"
-    }
+    tags                        = local.common_tags
   }
 }
 
 resource "aws_autoscaling_group" "producer_asg" {
   name                  = "awsgrid-with-sqs-producer-asg"
   min_size              = 0
-  max_size              = 10
-  desired_capacity      = 1
+  max_size              = 500
+  desired_capacity      = 0
   health_check_type     = "EC2"
   vpc_zone_identifier   = [
     aws_subnet.ec2_instance_subnet_1.id, 
     aws_subnet.ec2_instance_subnet_2.id
   ]
   launch_template {
-    id      = aws_launch_template.producer_launch_template.id
-    version = "$Latest"
+    id                  = aws_launch_template.producer_launch_template.id
+    version             = "$Latest"
   }
   metrics_granularity   = "1Minute"
   enabled_metrics       = ["GroupDesiredCapacity", "GroupInServiceInstances"]
@@ -236,11 +239,16 @@ resource "aws_autoscaling_group" "producer_asg" {
 
   depends_on            = [ aws_launch_template.producer_launch_template ]
 
-  tag {
-    key = "Name"
-    value = "awsgrid-producers"
-    propagate_at_launch = true
-  }
+  tags                  = concat(
+    [
+      {
+        key = "Name"
+        value = "awsgrid-producers"
+        propagate_at_launch = true
+      }
+    ], 
+    local.asg_instance_tags
+  )
 }
 
 # Supervisor ASG
@@ -249,6 +257,7 @@ data "template_file" "supervisor_user_data_script" {
   template = <<EOF
 #!/bin/bash -xe
 exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
+export AWS_ENV='${var.aws_env}'
 sudo -b -u ec2-user python3 /home/ec2-user/AWSGridWithSQS/src/supervisor/main.py
 EOF
 }
@@ -292,10 +301,7 @@ resource "aws_launch_template" "supervisor_launch_template" {
 
   tag_specifications {
     resource_type               = "instance"
-    tags = {
-      app = "AWSGridWithSQS"
-      component = "supervisor"
-    }
+    tags                        = local.common_tags
   }
 }
 
@@ -303,7 +309,7 @@ resource "aws_autoscaling_group" "supervisor_asg" {
   name                  = "awsgrid-with-sqs-supervisor-asg"
   min_size              = 0
   max_size              = 2
-  desired_capacity      = 1
+  desired_capacity      = 0
   health_check_type     = "EC2"
   vpc_zone_identifier   = [
     aws_subnet.ec2_instance_subnet_1.id, 
@@ -322,11 +328,16 @@ resource "aws_autoscaling_group" "supervisor_asg" {
 
   depends_on            = [ aws_launch_template.supervisor_launch_template ]
 
-  tag {
-    key = "Name"
-    value = "awsgrid-supervisor"
-    propagate_at_launch = true
-  }
+  tags                  = concat(
+    [
+      {
+        key = "Name"
+        value = "awsgrid-supervisor"
+        propagate_at_launch = true
+      }
+    ], 
+    local.asg_instance_tags
+  )
 }
 
 /*
@@ -340,8 +351,6 @@ resource "aws_instance" "test_instance" {
   # user_data = file("startup_script_ec2.sh")
   # subnet_id = aws_subnet.ec2_instance_subnet.id
 
-  tags = {
-    app = "AWSGridWithSQS"
-  }
+  tags = local.common_tags
 }
 */
