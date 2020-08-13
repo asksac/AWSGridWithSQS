@@ -64,7 +64,7 @@ def main(params):
         AutoScalingGroupNames=[ params['WORKER_ASG_NAME'] ]
       )
       desired_instances_count = int(worker_asg_info['AutoScalingGroups'][0]['DesiredCapacity'])
-      #all_instances_count = len(worker_asg_info['AutoScalingGroups'][0]['Instances'])
+      all_instances_count = len(worker_asg_info['AutoScalingGroups'][0]['Instances'])
 
       if desired_instances_count > 0: 
         backlog_per_instance = backlog_count / desired_instances_count
@@ -85,17 +85,51 @@ def main(params):
               'Value': backlog_per_instance, 
               'Unit': 'Count',
               'StorageResolution': 1
+          },
+          {
+              'MetricName': 'desired_instances_count',
+              'Dimensions': [
+                  {
+                      'Name': 'AutoScalingGroupName',
+                      'Value': params['SUPERVISOR_ASG_NAME']
+                  },
+              ],
+              'Value': desired_instances_count, 
+              'Unit': 'Count',
+              'StorageResolution': 1
+          },
+          {
+              'MetricName': 'all_instances_count',
+              'Dimensions': [
+                  {
+                      'Name': 'AutoScalingGroupName',
+                      'Value': params['SUPERVISOR_ASG_NAME']
+                  },
+              ],
+              'Value': all_instances_count, 
+              'Unit': 'Count',
+              'StorageResolution': 1
+          },
+          {
+              'MetricName': 'total_backlog_count',
+              'Dimensions': [
+                  {
+                      'Name': 'AutoScalingGroupName',
+                      'Value': params['SUPERVISOR_ASG_NAME']
+                  },
+              ],
+              'Value': backlog_count, 
+              'Unit': 'Count',
+              'StorageResolution': 1
           }
         ]
       )
 
-      logging.info(f'Published metric data [backlog_per_instance] = {backlog_per_instance}')
-
-      if (params['LOG_LEVEL'] == 'DEBUG'): 
-        logging.debug(f'Tasks queue ApproximateNumberOfMessages = {backlog_count}')
-        logging.debug(f'Worker ASG describe info = {worker_asg_info}')
+      if logging.getLogger().isEnabledFor(logging.DEBUG): 
+        logging.debug(f'Published metric data [backlog_per_instance] = {backlog_per_instance}')
         logging.debug(f'Worker ASG desired count = {desired_instances_count}')
-        #logging.debug(f'Worker ASG instances count = {all_instances_count}')
+        logging.debug(f'Worker ASG instances count = {all_instances_count}')
+        logging.debug(f'Tasks queue ApproximateNumberOfMessages = {backlog_count}')
 
       et = time.time() 
       dt = et - st
@@ -116,7 +150,7 @@ def main(params):
         time.sleep(30) # wait for 30 seconds
 
 
-# global variables with default values
+# define default parameter values
 defaults = dict(
   AWS_ENV = 'dev', 
   LOG_FILENAME = '/var/log/AWSGridWithSQS/supervisor-main.log', 
@@ -131,9 +165,8 @@ defaults = dict(
 # main
 if __name__ == '__main__':
   params = loadParams(defaults)
-  #logHandler = logging.handlers.RotatingFileHandler(params['LOG_FILENAME'], mode = 'a', maxBytes = params['MAX_LOG_FILESIZE'], backupCount = 5)
-  #logging.basicConfig(handlers = [logHandler], format = '%(asctime)s - %(levelname)s - %(message)s', level = params['LOG_LEVEL'])
-  logging.basicConfig(format = '%(asctime)s - %(levelname)s - %(message)s', level = params['LOG_LEVEL'])
+  logHandler = logging.handlers.RotatingFileHandler(params['LOG_FILENAME'], mode = 'a', maxBytes = params['MAX_LOG_FILESIZE'], backupCount = 5)
+  logging.basicConfig(handlers = [logHandler], format = '%(asctime)s - %(levelname)s - %(message)s', level = params['LOG_LEVEL'])
   signal.signal(signal.SIGINT, exit_handler)
   signal.signal(signal.SIGTERM, exit_handler)
   print('Press Ctrl+C to exit')
