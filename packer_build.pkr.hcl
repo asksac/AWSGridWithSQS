@@ -23,6 +23,6 @@ build {
   ]
 
   provisioner "shell" {
-      script                = "packer_script.sh"
+      script                = "packer_provisioner.sh"
   }
 }
