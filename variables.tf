@@ -24,3 +24,8 @@ variable "ec2_ssh_keypair_name" {
   type    = string
   description   = "Specify the name of an existing SSH keypair"
 }
+
+variable "aws_env" {
+  type    = string
+  description   = "Specify an AWS_ENV value, e.g. dev, test, uat, prod"
+}
