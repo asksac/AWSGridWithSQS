@@ -1,6 +1,6 @@
-import signal, sys
+import os, signal, sys
 import logging, logging.handlers
-import time, json, random
+import re, time
 import boto3
 from threading import Timer
 
@@ -11,30 +11,43 @@ def exit_handler(sig, frame):
   sys.exit(0)
 
 
-def loadParams():
+def loadParams(defaults):
+  if not defaults: 
+    raise ValueError('defaults must be a valid dictionary') 
+  params = defaults.copy()
+
+  # get AWS_ENV system environment variable
+  env = os.getenv('AWS_ENV')
+  valid_pattern = r'^[A-Za-z0-9_\-]{1,15}$'
+  if env and re.match(valid_pattern, env):
+    params['AWS_ENV'] = env 
+
   # create an ssm service client
   ssm = boto3.client('ssm')
-  path = '/dev/AWSGridWithSQS/supervisor/'
-  params = ssm.get_parameters_by_path(Path = path)
-  if params and params['Parameters']: 
-    for p in params['Parameters']: 
+
+  path = '/' + params['AWS_ENV'] + '/AWSGridWithSQS/supervisor/'
+  ssm_params = ssm.get_parameters_by_path(Path = path)
+
+  if ssm_params and ssm_params['Parameters']: 
+    for p in ssm_params['Parameters']: 
       n = p['Name'][len(path):] # strip out path prefix
       v = p['Value']
       if (n == 'log_filename'):
-        LOG_FILENAME = v
+        params['LOG_FILENAME'] = v
       elif (n == 'log_level'):
-        LOG_LEVEL = v
+        params['LOG_LEVEL'] = v
       elif (n == 'tasks_queue_name'):
-        TASKS_QUEUE_NAME = v
+        params['TASKS_QUEUE_NAME'] = v
       elif (n == 'worker_asg_name'):
-        WORKER_ASG_NAME = v
+        params['WORKER_ASG_NAME'] = v
       elif (n == 'supervisor_asg_name'):
-        SUPERVISOR_ASG_NAME = v
+        params['SUPERVISOR_ASG_NAME'] = v
       elif (n == 'metric_interval'):
-        METRIC_INTERVAL = int(v)
+        params['METRIC_INTERVAL'] = int(v)
+  return params
 
 
-def main():
+def main(params):
   # get service resources
   sqs = boto3.resource('sqs')
   asg = boto3.client('autoscaling')
@@ -44,11 +57,11 @@ def main():
   while True:
     try: 
       st = time.time()
-      tasks_queue = sqs.get_queue_by_name(QueueName=TASKS_QUEUE_NAME)
+      tasks_queue = sqs.get_queue_by_name(QueueName=params['TASKS_QUEUE_NAME'])
       backlog_count = int(tasks_queue.attributes['ApproximateNumberOfMessages'])
 
       worker_asg_info = asg.describe_auto_scaling_groups(
-        AutoScalingGroupNames=[ WORKER_ASG_NAME ]
+        AutoScalingGroupNames=[ params['WORKER_ASG_NAME'] ]
       )
       desired_instances_count = int(worker_asg_info['AutoScalingGroups'][0]['DesiredCapacity'])
       #all_instances_count = len(worker_asg_info['AutoScalingGroups'][0]['Instances'])
@@ -66,7 +79,7 @@ def main():
               'Dimensions': [
                   {
                       'Name': 'AutoScalingGroupName',
-                      'Value': SUPERVISOR_ASG_NAME
+                      'Value': params['SUPERVISOR_ASG_NAME']
                   },
               ],
               'Value': backlog_per_instance, 
@@ -78,7 +91,7 @@ def main():
 
       logging.info(f'Published metric data [backlog_per_instance] = {backlog_per_instance}')
 
-      if (LOG_LEVEL == 'DEBUG'): 
+      if (params['LOG_LEVEL'] == 'DEBUG'): 
         logging.debug(f'Tasks queue ApproximateNumberOfMessages = {backlog_count}')
         logging.debug(f'Worker ASG describe info = {worker_asg_info}')
         logging.debug(f'Worker ASG desired count = {desired_instances_count}')
@@ -86,8 +99,8 @@ def main():
 
       et = time.time() 
       dt = et - st
-      if (dt < METRIC_INTERVAL):
-        time.sleep(METRIC_INTERVAL - dt)
+      if (dt < params['METRIC_INTERVAL']):
+        time.sleep(params['METRIC_INTERVAL'] - dt)
 
       exception_count = 0 # reset exception count
 
@@ -104,20 +117,24 @@ def main():
 
 
 # global variables with default values
-LOG_FILENAME = '/var/log/AWSGridWithSQS/supervisor-main.log'
-LOG_LEVEL = 'INFO'
-MAX_LOG_FILESIZE = 10*1024*1024 # 10 Mbs
-TASKS_QUEUE_NAME = 'grid_tasks_queue'
-WORKER_ASG_NAME = 'awsgrid-with-sqs-worker-asg'
-SUPERVISOR_ASG_NAME = 'awsgrid-with-sqs-supervisor-asg'
-METRIC_INTERVAL = 15 # send a metric every x seconds
+defaults = dict(
+  AWS_ENV = 'dev', 
+  LOG_FILENAME = '/var/log/AWSGridWithSQS/supervisor-main.log', 
+  LOG_LEVEL = 'INFO', 
+  MAX_LOG_FILESIZE = 10*1024*1024, # 10 Mbs
+  TASKS_QUEUE_NAME = 'grid_tasks_queue', 
+  WORKER_ASG_NAME = 'awsgrid-with-sqs-worker-asg', 
+  SUPERVISOR_ASG_NAME = 'awsgrid-with-sqs-supervisor-asg', 
+  METRIC_INTERVAL = 15, # send a metric every x seconds
+)
 
 # main
 if __name__ == '__main__':
-  logHandler = logging.handlers.RotatingFileHandler(LOG_FILENAME, mode='a', maxBytes=MAX_LOG_FILESIZE, backupCount=5)
-  logging.basicConfig(handlers=[logHandler], format='%(asctime)s - %(levelname)s - %(message)s', level=LOG_LEVEL)
+  params = loadParams(defaults)
+  #logHandler = logging.handlers.RotatingFileHandler(params['LOG_FILENAME'], mode = 'a', maxBytes = params['MAX_LOG_FILESIZE'], backupCount = 5)
+  #logging.basicConfig(handlers = [logHandler], format = '%(asctime)s - %(levelname)s - %(message)s', level = params['LOG_LEVEL'])
+  logging.basicConfig(format = '%(asctime)s - %(levelname)s - %(message)s', level = params['LOG_LEVEL'])
   signal.signal(signal.SIGINT, exit_handler)
   signal.signal(signal.SIGTERM, exit_handler)
   print('Press Ctrl+C to exit')
-  loadParams()
-  main()      
+  main(params)
