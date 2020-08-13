@@ -1,7 +1,7 @@
 locals {
-  producer_path = "/dev/AWSGridWithSQS/producer"
-  supervisor_path = "/dev/AWSGridWithSQS/supervisor"
-  worker_path = "/dev/AWSGridWithSQS/worker"
+  producer_path = "/${var.aws_env}/AWSGridWithSQS/producer"
+  supervisor_path = "/${var.aws_env}/AWSGridWithSQS/supervisor"
+  worker_path = "/${var.aws_env}/AWSGridWithSQS/worker"
 }
 
 resource "aws_ssm_parameter" "producer_batch_size" {
@@ -37,18 +37,7 @@ resource "aws_ssm_parameter" "producer_prime_max_bits" {
   }
 }
 
-resource "aws_ssm_parameter" "producer_stats_rate" {
-  description = "Producer Stats Rate for Metric (0 to 1)"
-  type        = "String"
-  name        = "${local.producer_path}/stats_rate"
-  value       = "1"
-  overwrite   = true
-  tags = {
-      app = "AWSGridWithSQS"
-  }
-}
-
-resource "aws_ssm_parameter" "supervisor_stats_rate" {
+resource "aws_ssm_parameter" "supervisor_metric_interval" {
   description = "Supervisor Metric Interval in Seconds (Default 30)"
   type        = "String"
   name        = "${local.supervisor_path}/metric_interval"
