@@ -128,7 +128,7 @@ resource "aws_autoscaling_policy" "workers_target_policy" {
         value = "awsgrid-with-sqs-supervisor-asg"
       }
       metric_name = "backlog_per_instance"
-      statistic   = "Maximum"
+      statistic   = "Minimum"
     }
     target_value = 5000
   }
