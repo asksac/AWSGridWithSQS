@@ -8,53 +8,43 @@ resource "aws_ssm_parameter" "producer_batch_size" {
   description = "Producer Tasks Batch Size (Range 1 to 10)"
   type        = "String"
   name        = "${local.producer_path}/batch_size"
-  value       = "10"
+  value       = var.producer_batch_size
   overwrite   = true
-  tags = local.common_tags
+  tags        = local.common_tags
 }
 
 resource "aws_ssm_parameter" "producer_prime_min_bits" {
   description = "Producer Prime Number Minimum Bitsize"
   type        = "String"
   name        = "${local.producer_path}/prime_min_bits"
-  value       = "15"
+  value       = var.producer_prime_min_bits
   overwrite   = true
-  tags = local.common_tags
+  tags        = local.common_tags
 }
 
 resource "aws_ssm_parameter" "producer_prime_max_bits" {
   description = "Producer Prime Number Maximum Bitsize"
   type        = "String"
   name        = "${local.producer_path}/prime_max_bits"
-  value       = "25"
+  value       = var.producer_prime_max_bits
   overwrite   = true
-  tags = local.common_tags
+  tags        = local.common_tags
 }
 
 resource "aws_ssm_parameter" "supervisor_metric_interval" {
-  description = "Supervisor Metric Interval in Seconds (Default 30)"
+  description = "Supervisor Metric Interval in Seconds (Default 15)"
   type        = "String"
   name        = "${local.supervisor_path}/metric_interval"
-  value       = "15"
+  value       = var.supervisor_metric_interval
   overwrite   = true
-  tags = local.common_tags
+  tags        = local.common_tags
 }
 
 resource "aws_ssm_parameter" "worker_batch_size" {
   description = "Worker Batch Size (1 to 10, default 10)"
   type        = "String"
   name        = "${local.worker_path}/batch_size"
-  value       = "10"
+  value       = var.worker_batch_size
   overwrite   = true
-  tags = local.common_tags
+  tags        = local.common_tags
 }
-
-resource "aws_ssm_parameter" "worker_stats_rate" {
-  description = "Worker Stats Rate for Metric (0 to 1)"
-  type        = "String"
-  name        = "${local.worker_path}/stats_rate"
-  value       = "1"
-  overwrite   = true
-  tags = local.common_tags
-}
-

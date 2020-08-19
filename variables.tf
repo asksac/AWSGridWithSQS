@@ -40,3 +40,35 @@ variable "ec2_ssh_keypair_name" {
   type          = string
   description   = "Specify the name of an existing SSH keypair"
 }
+
+# Parameter Store values 
+
+variable "producer_batch_size" {
+  type          = string
+  default       = "10"
+  description   = "Producer Tasks Batch Size (Range 1 to 10)"
+}
+
+variable "producer_prime_min_bits" {
+  type          = string
+  default       = "20"
+  description   = "Producer Prime Number Minimum Bitsize"
+}
+
+variable "producer_prime_max_bits" {
+  type          = string
+  default       = "30"
+  description   = "Producer Prime Number Maximum Bitsize"
+}
+
+variable "supervisor_metric_interval" {
+  type          = string
+  default       = "15"
+  description   = "Supervisor Metric Interval in Seconds (Default 15)"
+}
+
+variable "worker_batch_size" {
+  type          = string
+  default       = "10"
+  description   = "Worker Batch Size (1 to 10, default 10)"
+}
