@@ -147,19 +147,19 @@ resource "aws_cloudwatch_dashboard" "main" {
             "height": 6,
             "properties": {
                 "metrics": [
-                    [ "AWS/SQS", "ApproximateNumberOfMessagesVisible", "QueueName", "grid_tasks_queue" ]
+                    [ "AWSGridWithSQS/AppMetrics", "total_backlog_count", "AutoScalingGroupName", "awsgrid-with-sqs-supervisor-asg", { "label": "Backlog Count [Last: $${LAST}]" } ]
                 ],
                 "view": "timeSeries",
                 "stacked": false,
                 "region": "us-east-1",
-                "period": 60,
+                "period": 30,
                 "title": "Tasks Queue Backlog Count",
                 "yAxis": {
                     "left": {
                         "showUnits": false
                     }
                 },
-                "stat": "p95"
+                "stat": "Maximum"
             }
         },
         {
@@ -267,15 +267,17 @@ resource "aws_cloudwatch_dashboard" "main" {
             "width": 6,
             "height": 3,
             "properties": {
+                "metrics": [
+                    [ "AWSGridWithSQS/AppMetrics", "desired_instances_count", "AutoScalingGroupName", "awsgrid-with-sqs-supervisor-asg", { "label": "Desired Capacity [Last: $${LAST}]" } ],
+                    [ ".", "all_instances_count", ".", ".", { "label": "InService Capacity [Last: $${LAST}]" } ]
+                ],
                 "view": "timeSeries",
                 "stacked": false,
-                "metrics": [
-                    [ "AWS/AutoScaling", "GroupDesiredCapacity", "AutoScalingGroupName", "awsgrid-with-sqs-worker-asg" ],
-                    [ ".", "GroupInServiceInstances", ".", "." ]
-                ],
                 "region": "us-east-1",
                 "title": "Worker ASG Capacity",
-                "period": 60
+                "period": 30,
+                "stat": "Maximum",
+                "setPeriodToTimeRange": true
             }
         },
         {
